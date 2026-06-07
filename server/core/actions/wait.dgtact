@@ -1,0 +1,12 @@
+{
+  "format": "dgtact",
+  "schema": 1,
+  "type": "action",
+  "actionType": "wait",
+  "name": "Wait",
+  "icon": "hourglass_empty",
+  "description": "Pause — set its length on the timeline",
+  "order": 8,
+  "defaults": {},
+  "fields": []
+}

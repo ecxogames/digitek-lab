@@ -1,0 +1,18 @@
+{
+  "format": "dgtact",
+  "schema": 1,
+  "type": "action",
+  "actionType": "mouseclick",
+  "name": "Mouse Click",
+  "icon": "ads_click",
+  "description": "Click at a point",
+  "order": 4,
+  "defaults": { "x": 0.5, "y": 0.5, "button": "left", "count": 1 },
+  "pick": { "mode": "point" },
+  "fields": [
+    { "k": "x", "label": "X", "type": "number", "step": "0.01", "widget": "coord" },
+    { "k": "y", "label": "Y", "type": "number", "step": "0.01", "widget": "coord" },
+    { "k": "button", "label": "Button", "type": "select", "widget": "segment", "options": ["left", "right", "middle"] },
+    { "k": "count", "label": "Clicks", "type": "number" }
+  ]
+}

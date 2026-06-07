@@ -1,0 +1,14 @@
+{
+  "format": "dgtact",
+  "schema": 1,
+  "type": "action",
+  "actionType": "fov",
+  "name": "FOV Preset",
+  "icon": "zoom_in",
+  "description": "Zoom out to max, then in to a point",
+  "order": 7,
+  "defaults": { "targetNotches": 6 },
+  "fields": [
+    { "k": "targetNotches", "label": "Zoom-in notches", "type": "number", "hint": "Scroll-in steps after zooming fully out" }
+  ]
+}

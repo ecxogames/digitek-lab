@@ -1,0 +1,19 @@
+{
+  "format": "dgtact",
+  "schema": 1,
+  "type": "action",
+  "actionType": "mousedrag",
+  "name": "Mouse Drag",
+  "icon": "drag_pan",
+  "description": "Smooth drag (camera pan)",
+  "order": 5,
+  "defaults": { "fromX": 0.4, "fromY": 0.5, "toX": 0.6, "toY": 0.5, "button": "right" },
+  "pick": { "mode": "line" },
+  "fields": [
+    { "k": "fromX", "label": "From X", "type": "number", "step": "0.01", "widget": "coord" },
+    { "k": "fromY", "label": "From Y", "type": "number", "step": "0.01", "widget": "coord" },
+    { "k": "toX", "label": "To X", "type": "number", "step": "0.01", "widget": "coord" },
+    { "k": "toY", "label": "To Y", "type": "number", "step": "0.01", "widget": "coord" },
+    { "k": "button", "label": "Button", "type": "select", "widget": "segment", "options": ["left", "right", "middle"] }
+  ]
+}

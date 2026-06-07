@@ -1,0 +1,9 @@
+# DigiTek Lab — local artifacts
+data/                 # user macros (.dgtmcr) & executions (.dgtexec) created at runtime
+build/
+dist/
+__pycache__/
+*.pyc
+engine/embedded_html.h
+engine/icon.rc
+engine/converted_icon.ico

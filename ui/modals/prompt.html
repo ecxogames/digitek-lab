@@ -1,0 +1,47 @@
+<modal width="420" height="260" blur="false" closeable="true" titlebar="false">
+    <titlebar value="false" height="40">
+        <div style="position:relative;height:100%;background:rgba(255,255,255,0.35);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:space-between;font-family:'Roboto','Segoe UI',sans-serif;user-select:none;">
+            <div style="position:absolute;inset:0;cursor:move;z-index:0;" onmousedown="if(window.dragWindow) window.dragWindow('')"></div>
+            <div style="position:relative;z-index:1;display:flex;align-items:center;gap:9px;padding-left:14px;pointer-events:none;">
+                <div style="width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.45);color:rgba(99,102,241,1);font-size:12px;font-weight:700;">›</div>
+                <span id="tb-label" style="font-size:12px;font-weight:600;color:rgba(0,0,0,0.6);">Prompt</span>
+            </div>
+            <button onclick="Close()" title="Close" style="position:relative;z-index:1;width:44px;height:40px;border:none;background:transparent;color:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s ease;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='rgba(0,0,0,0.45)'">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
+            </button>
+        </div>
+    </titlebar>
+
+    <title><value>Input</value></title>
+
+    <content>
+        <div style="display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;height:100%;width:100%;background:#DCDCDC;color:rgba(0,0,0,0.85);font-family:'Roboto','Segoe UI',sans-serif;padding:22px;box-sizing:border-box;">
+            <div>
+                <h2 id="p-title" style="margin:0 0 8px;font-size:16px;line-height:1.2;font-weight:600;color:rgba(0,0,0,0.85);">Input Required</h2>
+                <p id="p-message" style="margin:0 0 12px;font-size:13px;line-height:1.5;color:rgba(0,0,0,0.55);">Please enter a value:</p>
+            </div>
+            <input id="modal-input" type="text" placeholder="Type here…" style="width:100%;box-sizing:border-box;padding:10px 12px;background:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.6);border-radius:8px;color:rgba(0,0,0,0.85);font-size:13px;font-family:inherit;outline:none;transition:all 0.2s ease;margin-bottom:14px;" onfocus="this.style.borderColor='rgba(99,102,241,0.6)';this.style.background='rgba(255,255,255,0.6)';this.style.boxShadow='0 0 0 3px rgba(99,102,241,0.2)'" onblur="this.style.borderColor='rgba(255,255,255,0.6)';this.style.background='rgba(255,255,255,0.4)';this.style.boxShadow='none'" onkeydown="if(event.key==='Enter') Submit(); if(event.key==='Escape') Cancel();" />
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button onclick="Cancel()" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:12px;font-size:13px;font-weight:500;border:1px solid rgba(255,255,255,0.6);background:rgba(255,255,255,0.4);color:rgba(0,0,0,0.7);cursor:pointer;transition:all 0.2s ease;" onmouseover="this.style.background='rgba(255,255,255,0.6)'" onmouseout="this.style.background='rgba(255,255,255,0.4)'">Cancel</button>
+                <button onclick="Submit()" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:12px;font-size:13px;font-weight:500;border:1px solid rgba(99,102,241,0.45);background:rgba(99,102,241,0.25);color:rgba(99,102,241,1);cursor:pointer;transition:all 0.2s ease;" onmouseover="this.style.background='rgba(99,102,241,0.4)'" onmouseout="this.style.background='rgba(99,102,241,0.25)'">OK</button>
+            </div>
+        </div>
+    </content>
+
+    <script>
+        const p = window.__esd_payload || {};
+        if (p.title)   document.getElementById('p-title').textContent = p.title;
+        if (p.message) document.getElementById('p-message').textContent = p.message;
+        if (p.tbLabel) document.getElementById('tb-label').textContent = p.tbLabel;
+
+        const input = document.getElementById('modal-input');
+        if (p.placeholder) input.placeholder = p.placeholder;
+        if (p.default != null) input.value = p.default;
+        input.focus();
+        input.select();
+
+        function Submit() { closeModal(input.value); }
+        function Cancel() { closeModal(null); }
+        function Close() { closeModal(null); }
+    </script>
+</modal>

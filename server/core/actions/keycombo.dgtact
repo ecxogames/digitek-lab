@@ -1,0 +1,14 @@
+{
+  "format": "dgtact",
+  "schema": 1,
+  "type": "action",
+  "actionType": "keycombo",
+  "name": "Key Combo",
+  "icon": "keyboard_command_key",
+  "description": "Press several keys together",
+  "order": 2,
+  "defaults": { "keys": "ctrl_l,c" },
+  "fields": [
+    { "k": "keys", "label": "Keys", "type": "text", "widget": "keys", "hint": "Click “Record” then press the combo (e.g. Ctrl+C) — held for the clip's length" }
+  ]
+}

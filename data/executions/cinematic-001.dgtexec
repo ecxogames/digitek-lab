@@ -1,0 +1,59 @@
+{
+  "timeline": [
+    {
+      "id": "i1",
+      "kind": "action",
+      "actionType": "mousedrag",
+      "name": "Mouse Drag",
+      "params": {
+        "fromX": 0.04,
+        "fromY": 0.5,
+        "toX": 0.1,
+        "toY": 0.6,
+        "button": "right"
+      },
+      "intrinsic": 0,
+      "layer": 0,
+      "start": 0.05,
+      "duration": 9.950000000000001,
+      "trimStart": 0
+    },
+    {
+      "id": "i2",
+      "kind": "action",
+      "actionType": "keypress",
+      "name": "Key Press",
+      "params": {
+        "key": "d",
+        "holdMs": 10000
+      },
+      "intrinsic": 10.05,
+      "layer": 1,
+      "start": 0,
+      "duration": 9.950000000000001,
+      "trimStart": 0
+    },
+    {
+      "id": "i3",
+      "kind": "action",
+      "actionType": "keypress",
+      "name": "Key Press",
+      "params": {
+        "key": "shift_l",
+        "holdMs": 10000
+      },
+      "intrinsic": 10.05,
+      "layer": 2,
+      "start": 0,
+      "duration": 9.950000000000001,
+      "trimStart": 0
+    }
+  ],
+  "format": "dgtexec",
+  "schema": 1,
+  "name": "CINEMATIC - 001",
+  "motionControlled": false,
+  "ref": "cinematic-001.dgtexec",
+  "createdAt": "2026-06-07T11:04:10",
+  "updatedAt": "2026-06-07T11:19:32"
+}

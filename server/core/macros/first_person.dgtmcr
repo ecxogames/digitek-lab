@@ -1,0 +1,32 @@
+{
+  "format": "dgtmcr",
+  "schema": 1,
+  "type": "macro",
+  "id": "core-first-person",
+  "name": "First Person",
+  "kind": "core",
+  "motionControlled": false,
+  "description": "Scrolls the camera all the way in to first person. Used by motion-control resets so a recorded macro always begins from the player's eye position for repeatable precision.",
+  "duration": 0.216,
+  "events": [
+    {"t": 0.000, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.012, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.024, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.036, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.048, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.060, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.072, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.084, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.096, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.108, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.120, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.132, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.144, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.156, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.168, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.180, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.192, "type": "scroll", "dx": 0, "dy": 1},
+    {"t": 0.204, "type": "scroll", "dx": 0, "dy": 1}
+  ],
+  "params": {}
+}

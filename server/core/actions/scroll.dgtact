@@ -1,0 +1,14 @@
+{
+  "format": "dgtact",
+  "schema": 1,
+  "type": "action",
+  "actionType": "scroll",
+  "name": "Scroll",
+  "icon": "mouse",
+  "description": "Zoom in/out by notches",
+  "order": 6,
+  "defaults": { "amount": -3 },
+  "fields": [
+    { "k": "amount", "label": "Amount (− out / + in)", "type": "number", "hint": "Negative zooms out, positive zooms in" }
+  ]
+}

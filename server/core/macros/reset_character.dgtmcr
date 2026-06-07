@@ -1,0 +1,21 @@
+{
+  "format": "dgtmcr",
+  "schema": 1,
+  "type": "macro",
+  "id": "core-reset-character",
+  "name": "Reset Character",
+  "kind": "core",
+  "motionControlled": false,
+  "description": "Resets the avatar to a known spawn state at the start of a motion-control take. Roblox has no universal reset keybind, so this ships as a CALIBRATABLE placeholder (Esc -> R -> Enter). Re-record it from your own game menu if the default sequence doesn't match your setup.",
+  "calibratable": true,
+  "duration": 1.30,
+  "events": [
+    {"t": 0.00, "type": "key", "action": "down", "key": "esc"},
+    {"t": 0.06, "type": "key", "action": "up", "key": "esc"},
+    {"t": 0.60, "type": "key", "action": "down", "key": "r"},
+    {"t": 0.66, "type": "key", "action": "up", "key": "r"},
+    {"t": 1.10, "type": "key", "action": "down", "key": "enter"},
+    {"t": 1.16, "type": "key", "action": "up", "key": "enter"}
+  ],
+  "params": {}
+}
