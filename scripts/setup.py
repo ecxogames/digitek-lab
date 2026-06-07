@@ -89,7 +89,7 @@ def install_cmake():
 
 def install_python_deps():
     """Install the Python packages the DigiTek Lab backend needs for development."""
-    deps = ["pynput"]  # real keyboard/mouse capture & playback
+    deps = ["pynput", "vgamepad"]  # real keyboard/mouse plus virtual controller playback
     print(f"\n[*] Installing Python backend dependencies: {', '.join(deps)}...")
     try:
         subprocess.run([sys.executable, "-m", "pip", "install", *deps], check=True)

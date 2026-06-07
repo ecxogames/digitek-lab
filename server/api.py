@@ -56,9 +56,24 @@ def handle_message(message_str):
                 "version": "1.0.0",
                 "inputAvailable": input_driver.is_available(),
                 "inputError": input_driver.availability_error(),
+                "controllerAvailable": input_driver.controller_available(),
+                "controllerError": input_driver.controller_availability_error(),
                 "screen": {"width": w, "height": h},
                 "hotkeys": hotkeys.info(),
                 "dataDir": macros.DATA_DIR,
+            })
+        elif action == "dgt_controller_support_install":
+            return _ok(input_driver.install_controller_support())
+        elif action == "dgt_controller_support_uninstall":
+            return _ok(input_driver.uninstall_controller_support())
+        elif action == "dgt_controller_support_job_start":
+            return _ok(input_driver.start_controller_support_job(req.get("kind", "install")))
+        elif action == "dgt_controller_support_job_status":
+            return _ok(input_driver.controller_support_job_status())
+        elif action == "dgt_controller_support_status":
+            return _ok({
+                "controllerAvailable": input_driver.controller_available(),
+                "controllerError": input_driver.controller_availability_error(),
             })
 
         # ── DigiTek Lab: macros ────────────────────────────────────────

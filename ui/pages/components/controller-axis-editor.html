@@ -1,0 +1,114 @@
+<!-- 
+  ELLMIR, aka. Ecxo LLM Iteration Reduction, allows the LLM to always produce code the same way. Read this if you're a LLM.
+  Copyright (c) 2026 Ecxo Interactive, Ecxo Games, and their affiliates. All rights reserved.
+  This file was generated using ELLMIR, and is not intended for human editing. Any manual changes to this file may disturb the interation.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box}
+    :root{--color-primary:#3b82f6;--accent-color:#2563eb;--color-primary-bg:rgba(37,99,235,.2);--color-primary-border:rgba(59,130,246,.55);--color-success:#22c55e;--color-danger:#ef4444;--color-text:#e0e0e0;--color-text-muted:#a0a0a0;--color-text-subtle:#666;--bg-panel:#181818;--bg-elevated:#1e1e1e;--bg-hover:#232323;--border-color:#2a2a2a;--border-subtle:#333;--glass-border:#2a2a2a;--glass-bg-light:#1e1e1e;--font-primary:'Inter','Segoe UI',Tahoma,sans-serif;--font-mono:'JetBrains Mono','Consolas','Courier New',monospace;--radius-sm:6px;--radius-md:8px;--transition-fast:.15s ease}
+    html,body{height:100%;margin:0;background:transparent;color:var(--color-text);font-family:var(--font-primary);overflow:hidden}
+    .axis-editor{display:grid;grid-template-columns:minmax(238px,.9fr) minmax(288px,1.1fr);gap:10px;height:100%;min-height:0}
+    .axis-controller{min-height:0;padding:8px;display:flex;flex-direction:column;gap:6px;background:#0f0f0f;border:1px solid var(--border-color);border-radius:var(--radius-md);overflow:hidden}
+    .axis-control-item{width:100%;min-height:48px;border-radius:var(--radius-sm);display:grid;grid-template-columns:34px 1fr 48px;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-elevated);color:var(--color-text);border:1px solid var(--border-subtle);box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;text-align:left;transition:all var(--transition-fast);font-family:var(--font-primary)}
+    .axis-control-item:hover,.axis-control-item.active{background:rgba(37,99,235,.18);border-color:var(--color-primary-border);box-shadow:0 0 0 2px rgba(59,130,246,.18),0 4px 14px rgba(0,0,0,.4)}
+    .axis-control-main{min-width:0}.axis-control-name{display:block;font-size:12px;font-weight:700;color:var(--color-text)}.axis-control-desc{display:block;font-size:10px;color:var(--color-text-subtle);margin-top:0}
+    .axis-control-side{display:flex;justify-content:flex-end}.axis-control-glyph{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:rgba(59,130,246,.15);color:var(--color-primary);border:1px solid var(--border-subtle)}
+    .axis-control-glyph .material-symbols-outlined{font-size:18px}
+    .axis-control-icon{position:relative;width:48px;height:38px;display:block}
+    .axis-control-icon.stick::before{content:'';position:absolute;left:11px;top:5px;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 25%,#f8fafc,#8b93a3 38%,#303744 72%);box-shadow:0 5px 10px rgba(0,0,0,.16),inset 0 1px 1px rgba(255,255,255,.6);transform:translate(var(--stick-to-x,0px),var(--stick-to-y,0px))}
+    .axis-control-icon.stick::after{content:'';position:absolute;left:20px;top:14px;width:10px;height:10px;border-radius:50%;background:rgba(34,197,94,.88);box-shadow:0 0 0 2px rgba(0,0,0,.5)}
+    .axis-control-icon.trigger::before{content:'';position:absolute;left:7px;top:6px;width:38px;height:26px;border-radius:10px 10px 7px 7px;background:linear-gradient(180deg,#9aa3b1,#3d4655 58%,#222936);box-shadow:0 5px 10px rgba(0,0,0,.16),inset 0 1px 1px rgba(255,255,255,.35)}
+    .axis-control-icon.trigger::after{content:'';position:absolute;left:7px;right:3px;bottom:6px;height:calc(var(--trigger-to,0) * 26px);border-radius:0 0 7px 7px;background:rgba(34,197,94,.58)}
+    .axis-panel{border-radius:var(--radius-md);background:#0f0f0f;border:1px solid var(--border-color);padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0;overflow:hidden}
+    .axis-panel-head{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--color-text)}.axis-panel-head .material-symbols-outlined{font-size:19px;color:var(--color-primary)}
+    .axis-point-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px}.axis-point-tab{border:1px solid var(--border-subtle);border-radius:6px;background:var(--bg-elevated);padding:6px 8px;cursor:pointer;font-size:12px;font-weight:700;color:var(--color-text-muted);display:flex;align-items:center;justify-content:center;gap:6px;transition:all var(--transition-fast);font-family:var(--font-primary)}.axis-point-tab.active{color:#fff;background:var(--accent-color);border-color:var(--accent-color)}
+    .axis-dot{width:9px;height:9px;border-radius:50%;background:var(--color-primary)}.axis-dot.target{background:var(--color-success)}
+    .axis-stick-pad{position:relative;width:148px;height:148px;align-self:center;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid var(--border-subtle);cursor:grab;touch-action:none;flex:0 0 auto}
+    .axis-stick-pad::before,.axis-stick-pad::after{content:'';position:absolute;background:rgba(255,255,255,.12)}.axis-stick-pad::before{left:50%;top:10px;bottom:10px;width:1px}.axis-stick-pad::after{top:50%;left:10px;right:10px;height:1px}
+    .axis-stick-thumb,.axis-stick-ghost{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:2px solid rgba(255,255,255,.5);pointer-events:none;box-shadow:0 8px 20px rgba(0,0,0,.5)}.axis-stick-thumb{background:var(--color-success)}.axis-stick-ghost{background:rgba(59,130,246,.45);box-shadow:none}.axis-stick-path{position:absolute;left:50%;top:50%;height:2px;width:0;transform-origin:left center;background:rgba(34,197,94,.72);pointer-events:none}
+    .axis-trigger-press{position:relative;height:78px;border-radius:10px;background:#0a0a0a;border:1px solid var(--border-subtle);overflow:hidden;cursor:ns-resize;touch-action:none}.axis-trigger-press::before{content:'';position:absolute;left:0;right:0;bottom:0;height:calc(var(--from,0) * 100%);background:rgba(59,130,246,.32)}.axis-trigger-press::after{content:'';position:absolute;left:0;right:0;bottom:0;height:calc(var(--to,0) * 100%);background:rgba(34,197,94,.5)}.axis-trigger-cap{position:absolute;left:12px;right:12px;top:8px;height:24px;border-radius:8px;background:rgba(255,255,255,.08);border:1px solid var(--border-subtle);transform:translateY(calc(var(--cap,0) * 38px));transition:transform var(--transition-fast);z-index:1}
+    .axis-slider-row{display:grid;grid-template-columns:28px 1fr 58px;align-items:center;gap:8px;font-size:12px;color:var(--color-text-muted)}.axis-slider-row input[type=number]{width:58px;padding:5px 6px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--color-text)}
+    .axis-record-row{display:flex;gap:6px;flex-wrap:wrap}.axis-readout{font-family:var(--font-mono);font-size:10px;color:var(--color-text-subtle);min-height:14px}.axis-support-row{display:flex;align-items:center;justify-content:flex-start;gap:7px;flex-wrap:wrap;font-size:10px;color:var(--color-text-subtle);padding-top:0}.axis-support-row button{border:none;background:transparent;padding:0;cursor:pointer;font:inherit;color:var(--color-primary);text-decoration:underline}.axis-support-row button.danger{color:var(--color-danger)}
+    .GTextBtn{padding:7px 12px;font-size:12px;font-weight:500;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--bg-elevated);color:var(--color-text);cursor:pointer;transition:all .2s ease;display:inline-flex;align-items:center;gap:5px;font-family:var(--font-primary)}.GTextBtn:hover{background:var(--bg-hover)}.GTextBtn .material-symbols-outlined{font-size:17px}.GTextBtn.primary{background:var(--accent-color);border-color:var(--accent-color);color:#fff}.GTextBtn.ghost{background:transparent;border-color:transparent;color:var(--color-text-muted)}
+    @media(max-width:640px){.axis-editor{grid-template-columns:1fr;overflow:hidden}.axis-controller{display:grid;grid-template-columns:1fr 1fr}.axis-stick-pad{width:128px;height:128px}}
+  </style>
+</head>
+<body>
+  <div class="axis-editor">
+    <div class="axis-controller" aria-label="Controller axis picker">
+      <button type="button" class="axis-control-item" data-axis-part="left_stick"><span class="axis-control-glyph"><span class="material-symbols-outlined">sports_esports</span></span><span class="axis-control-main"><span class="axis-control-name">Left Stick</span><span class="axis-control-desc">Analog movement axis</span></span><span class="axis-control-side"><span class="axis-control-icon stick" data-axis-icon="left_stick"></span></span></button>
+      <button type="button" class="axis-control-item" data-axis-part="right_stick"><span class="axis-control-glyph"><span class="material-symbols-outlined">sports_esports</span></span><span class="axis-control-main"><span class="axis-control-name">Right Stick</span><span class="axis-control-desc">Analog camera/look axis</span></span><span class="axis-control-side"><span class="axis-control-icon stick" data-axis-icon="right_stick"></span></span></button>
+      <button type="button" class="axis-control-item" data-axis-part="left_trigger"><span class="axis-control-glyph"><span class="material-symbols-outlined">vertical_align_bottom</span></span><span class="axis-control-main"><span class="axis-control-name">Left Trigger</span><span class="axis-control-desc">Analog pull amount</span></span><span class="axis-control-side"><span class="axis-control-icon trigger" data-axis-icon="left_trigger"></span></span></button>
+      <button type="button" class="axis-control-item" data-axis-part="right_trigger"><span class="axis-control-glyph"><span class="material-symbols-outlined">vertical_align_bottom</span></span><span class="axis-control-main"><span class="axis-control-name">Right Trigger</span><span class="axis-control-desc">Analog pull amount</span></span><span class="axis-control-side"><span class="axis-control-icon trigger" data-axis-icon="right_trigger"></span></span></button>
+    </div>
+    <div class="axis-panel">
+      <div class="axis-panel-head"><span class="material-symbols-outlined" id="axis-part-icon">sports_esports</span><span id="axis-part-title">Left Stick</span></div>
+      <div class="axis-point-tabs">
+        <button type="button" class="axis-point-tab" id="axis-initial-tab"><span class="axis-dot"></span>Initial</button>
+        <button type="button" class="axis-point-tab" id="axis-target-tab"><span class="axis-dot target"></span>Target</button>
+      </div>
+      <div id="axis-stick-tools">
+        <div class="axis-stick-pad" id="axis-stick-pad"><div class="axis-stick-path" id="axis-stick-path"></div><div class="axis-stick-ghost" id="axis-stick-ghost"></div><div class="axis-stick-thumb" id="axis-stick-thumb"></div></div>
+        <div class="axis-slider-row"><span>X</span><input type="range" min="-1" max="1" step="0.01" id="axis-x-range"><input type="number" min="-1" max="1" step="0.01" id="axis-x-num"></div>
+        <div class="axis-slider-row"><span>Y</span><input type="range" min="-1" max="1" step="0.01" id="axis-y-range"><input type="number" min="-1" max="1" step="0.01" id="axis-y-num"></div>
+      </div>
+      <div id="axis-trigger-tools" style="display:none">
+        <div class="axis-trigger-press" id="axis-trigger-press"><div class="axis-trigger-cap" id="axis-trigger-cap"></div></div>
+        <div class="axis-slider-row"><span>Pull</span><input type="range" min="0" max="1" step="0.01" id="axis-value-range"><input type="number" min="0" max="1" step="0.01" id="axis-value-num"></div>
+      </div>
+      <div class="axis-record-row"><button type="button" class="GTextBtn primary" id="axis-record-btn"><span class="material-symbols-outlined">fiber_manual_record</span>Record controller</button><button type="button" class="GTextBtn ghost" id="axis-center-btn"><span class="material-symbols-outlined">restart_alt</span>Center</button></div>
+      <div class="axis-readout" id="axis-readout"></div>
+      <div class="axis-support-row" id="axis-support-row"></div>
+    </div>
+  </div>
+  <script>
+    const PARTS={left_stick:{label:'Left Stick',icon:'sports_esports',axes:[0,1],kind:'stick'},right_stick:{label:'Right Stick',icon:'sports_esports',axes:[2,3],kind:'stick'},left_trigger:{label:'Left Trigger',icon:'vertical_align_bottom',button:6,axis:6,kind:'trigger'},right_trigger:{label:'Right Trigger',icon:'vertical_align_bottom',button:7,axis:7,kind:'trigger'}};
+    let params={part:'left_stick',fromX:0,fromY:0,toX:0,toY:.35,fromValue:0,toValue:.5};
+    let editPoint='target';
+    let controllerAvailable=false;
+    let axisRecTimer=null;
+    const $=id=>document.getElementById(id);
+    const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number.isFinite(+n)?+n:0));
+    function normalize(v){v=v||{};return{part:PARTS[v.part]?v.part:'left_stick',fromX:clamp(v.fromX,-1,1),fromY:clamp(v.fromY,-1,1),toX:clamp(v.toX??v.x,-1,1),toY:clamp(v.toY??v.y,-1,1),fromValue:clamp(v.fromValue,0,1),toValue:clamp(v.toValue??v.value,0,1)}}
+    function post(type,data){parent.postMessage(Object.assign({type},data||{}),'*')}
+    function sendChange(){post('controller-axis-change',{params})}
+    function setEditPoint(point){editPoint=point==='initial'?'initial':'target';updateUi()}
+    function selectPart(part){params.part=PARTS[part]?part:'left_stick';updateUi();sendChange()}
+    function patch(values){params=normalize(Object.assign({},params,values||{}));updateUi();sendChange()}
+    function activeValues(){return editPoint==='initial'?{x:params.fromX,y:params.fromY,value:params.fromValue}:{x:params.toX,y:params.toY,value:params.toValue}}
+    function setComponent(name,raw){const value=clamp(raw,name==='value'?0:-1,1);if(editPoint==='initial'){if(name==='x')params.fromX=value;if(name==='y')params.fromY=value;if(name==='value')params.fromValue=value}else{if(name==='x')params.toX=value;if(name==='y')params.toY=value;if(name==='value')params.toValue=value}updateUi();sendChange()}
+    function updateUi(){const part=PARTS[params.part]||PARTS.left_stick;document.querySelectorAll('[data-axis-part]').forEach(b=>b.classList.toggle('active',b.dataset.axisPart===params.part));$('axis-part-title').textContent=part.label;$('axis-part-icon').textContent=part.icon;$('axis-stick-tools').style.display=part.kind==='stick'?'':'none';$('axis-trigger-tools').style.display=part.kind==='trigger'?'':'none';$('axis-initial-tab').classList.toggle('active',editPoint==='initial');$('axis-target-tab').classList.toggle('active',editPoint!=='initial');const a=activeValues();$('axis-x-range').value=a.x;$('axis-x-num').value=a.x.toFixed(2);$('axis-y-range').value=a.y;$('axis-y-num').value=a.y.toFixed(2);$('axis-value-range').value=a.value;$('axis-value-num').value=a.value.toFixed(2);const sx=params.fromX*59,sy=params.fromY*59,tx=params.toX*59,ty=params.toY*59;$('axis-stick-ghost').style.transform=`translate(${sx}px, ${sy}px)`;$('axis-stick-ghost').style.opacity=editPoint==='initial'?'1':'.58';$('axis-stick-thumb').style.transform=`translate(${tx}px, ${ty}px)`;$('axis-stick-thumb').style.opacity=editPoint==='initial'?'.72':'1';const dx=tx-sx,dy=ty-sy;$('axis-stick-path').style.transform=`translate(${sx}px, ${sy}px) rotate(${Math.atan2(dy,dx)}rad)`;$('axis-stick-path').style.width=Math.hypot(dx,dy)+'px';document.querySelectorAll('.axis-control-icon.stick').forEach(el=>{el.style.setProperty('--stick-to-x','0px');el.style.setProperty('--stick-to-y','0px')});document.querySelectorAll('.axis-control-icon.trigger').forEach(el=>el.style.setProperty('--trigger-to','0'));const icon=document.querySelector(`[data-axis-icon="${params.part}"]`);if(icon&&part.kind==='stick'){icon.style.setProperty('--stick-to-x',(params.toX*7)+'px');icon.style.setProperty('--stick-to-y',(params.toY*7)+'px')}if(icon&&part.kind==='trigger')icon.style.setProperty('--trigger-to',params.toValue);$('axis-trigger-press').style.setProperty('--from',params.fromValue);$('axis-trigger-press').style.setProperty('--to',params.toValue);$('axis-trigger-press').style.setProperty('--cap',a.value);$('axis-readout').textContent=part.kind==='stick'?`${part.label}  ${editPoint==='initial'?'Initial':'Target'} X ${a.x.toFixed(2)}  Y ${a.y.toFixed(2)}`:`${part.label}  ${editPoint==='initial'?'Initial':'Target'} pull ${a.value.toFixed(2)}`;renderSupportRow()}
+    function renderSupportRow(){const row=$('axis-support-row');row.innerHTML=(controllerAvailable?'<span>Controller support ready.</span>':'<span>Controller support missing.</span>')+'<button type="button" id="axis-reinstall">Reinstall drivers</button><button type="button" class="danger" id="axis-uninstall">Uninstall drivers</button>';row.querySelector('#axis-reinstall')?.addEventListener('click',()=>post('controller-axis-install'));row.querySelector('#axis-uninstall')?.addEventListener('click',()=>post('controller-axis-uninstall'))}
+    function startStickDrag(e){e.preventDefault();const pad=$('axis-stick-pad');pad.setPointerCapture(e.pointerId);const move=ev=>{const r=pad.getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height/2,max=r.width/2;let x=(ev.clientX-cx)/max,y=(ev.clientY-cy)/max;const len=Math.hypot(x,y);if(len>1){x/=len;y/=len}patch(editPoint==='initial'?{fromX:x,fromY:y}:{toX:x,toY:y})};const up=()=>{pad.removeEventListener('pointermove',move);pad.removeEventListener('pointerup',up);pad.removeEventListener('pointercancel',up)};pad.addEventListener('pointermove',move);pad.addEventListener('pointerup',up);pad.addEventListener('pointercancel',up);move(e)}
+    function startTriggerDrag(e){e.preventDefault();const press=$('axis-trigger-press');press.setPointerCapture(e.pointerId);const move=ev=>{const r=press.getBoundingClientRect();const value=clamp(1-((ev.clientY-r.top)/r.height),0,1);patch(editPoint==='initial'?{fromValue:value}:{toValue:value})};const up=()=>{press.removeEventListener('pointermove',move);press.removeEventListener('pointerup',up);press.removeEventListener('pointercancel',up)};press.addEventListener('pointermove',move);press.addEventListener('pointerup',up);press.addEventListener('pointercancel',up);move(e)}
+    function resetValue(){patch(editPoint==='initial'?{fromX:0,fromY:0,fromValue:0}:{toX:0,toY:0,toValue:0})}
+    function toggleRecord(){const btn=$('axis-record-btn');if(axisRecTimer){clearInterval(axisRecTimer);axisRecTimer=null;btn.classList.remove('recording');btn.innerHTML='<span class="material-symbols-outlined">fiber_manual_record</span>Record controller';return}if(!navigator.getGamepads){post('controller-axis-toast',{kind:'err',text:'Gamepad recording is not available in this browser.'});return}btn.classList.add('recording');btn.innerHTML='<span class="material-symbols-outlined">stop</span>Stop recording';axisRecTimer=setInterval(()=>{const gp=Array.from(navigator.getGamepads()).find(Boolean);if(!gp){$('axis-readout').textContent='Connect or move a controller to record.';return}const part=PARTS[params.part];if(part.kind==='stick'){const x=gp.axes[part.axes[0]]||0,y=gp.axes[part.axes[1]]||0;patch(editPoint==='initial'?{fromX:Math.abs(x)<.03?0:x,fromY:Math.abs(y)<.03?0:y}:{toX:Math.abs(x)<.03?0:x,toY:Math.abs(y)<.03?0:y})}else{const fromButton=gp.buttons[part.button]?gp.buttons[part.button].value:0;const fromAxis=typeof gp.axes[part.axis]==='number'?(gp.axes[part.axis]+1)/2:0;const pull=Math.max(fromButton,fromAxis);patch(editPoint==='initial'?{fromValue:pull}:{toValue:pull})}},80)}
+    document.querySelectorAll('[data-axis-part]').forEach(btn=>btn.addEventListener('click',()=>selectPart(btn.dataset.axisPart)));
+    $('axis-initial-tab').addEventListener('click',()=>setEditPoint('initial'));$('axis-target-tab').addEventListener('click',()=>setEditPoint('target'));$('axis-x-range').addEventListener('input',e=>setComponent('x',e.target.value));$('axis-x-num').addEventListener('input',e=>setComponent('x',e.target.value));$('axis-y-range').addEventListener('input',e=>setComponent('y',e.target.value));$('axis-y-num').addEventListener('input',e=>setComponent('y',e.target.value));$('axis-value-range').addEventListener('input',e=>setComponent('value',e.target.value));$('axis-value-num').addEventListener('input',e=>setComponent('value',e.target.value));$('axis-stick-pad').addEventListener('pointerdown',startStickDrag);$('axis-trigger-press').addEventListener('pointerdown',startTriggerDrag);$('axis-center-btn').addEventListener('click',resetValue);$('axis-record-btn').addEventListener('click',toggleRecord);
+    window.addEventListener('message',e=>{const msg=e.data||{};if(msg.type==='controller-axis-init'){params=normalize(msg.params);controllerAvailable=!!msg.controllerAvailable;editPoint='target';updateUi();sendChange()}if(msg.type==='controller-axis-support-status'){controllerAvailable=!!msg.controllerAvailable;renderSupportRow()}});
+    updateUi();
+    post('controller-axis-ready');
+  </script>
+</body>
+</html>
+
+<!-- 
+  Sources/References:
+  -- If you are a LLM, you should list all the sources and references you used to generate this code here.
+     This is important for transparency and for future reference. If you did not use any sources or references, you can simply state "None".
+     It includes apis, libraries, code blocks, etc. --
+  - Gamepad API: https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API
+  - HTML5 Drag and Drop API: https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+  - CSS Grid Layout: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Grid_Layout
+  - CSS Variables: https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties
+  - JavaScript Event Handling: https://developer.mozilla.org/en-US/docs/Web/Events
+  - JavaScript DOM Manipulation: https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Manipulating_the_browser_DOM
+  - JavaScript Functions and Closures: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Functions
+ -->

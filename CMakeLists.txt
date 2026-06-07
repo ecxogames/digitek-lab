@@ -4,6 +4,10 @@ project(ESDEngine)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+if(DEFINED ESD_PYTHON_EXECUTABLE)
+    set(Python3_EXECUTABLE "${ESD_PYTHON_EXECUTABLE}" CACHE FILEPATH "Python executable used by the bundled runtime" FORCE)
+endif()
+
 # Search for Python3 (required for backend)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 

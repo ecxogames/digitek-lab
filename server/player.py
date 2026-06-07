@@ -44,10 +44,15 @@ _clock = {"start": 0.0, "paused_total": 0.0, "paused_at": None}
 
 # Timed log of reversible motion during the forward pass — used to play the
 # execution BACKWARD when Motion Control is on. Entries are:
-# (t_seconds, kind, a, b): "rmove" -> (dx, dy), "scroll" -> (notches, 0),
-# "key" -> (key_name, action).
+# (t_seconds, kind, a, b):
+#   "rmove"               -> (dx, dy)
+#   "scroll"              -> (notches, 0)
+#   "key"                 -> (key_name, action)
+#   "controller_axis_seg" -> (part, {"from":(fx,fy,fv), "to":(tx,ty,tv), "dur":seconds})
 _cam_log = []
 _track_cam = [False]   # log only during the forward timeline phase
+# Per-part in-progress segment tracker; populated while _track_cam is True.
+_axis_tracking = {}    # part -> {"t_start": float, "from": (x,y,v), "last": (x,y,v), "t_last": float}
 _REVERSIBLE_KEY_OPPOSITES = {
     "w": "s",
     "s": "w",
@@ -187,6 +192,29 @@ def _dispatch_event(ev):
             _cam_log.append((_clock_now(), "rmove", ev.get("dx", 0.0), ev.get("dy", 0.0)))
     elif etype == "rbtn":
         input_driver.raw_button(ev.get("button", "left"), ev.get("action") == "down")
+    elif etype == "controller_axis":
+        part = ev.get("part", "left_stick")
+        x    = float(ev.get("x",     0.0))
+        y    = float(ev.get("y",     0.0))
+        val  = float(ev.get("value", 0.0))
+        input_driver.controller_axis(part, x, y, val)
+        if _track_cam[0]:
+            t_now = _clock_now()
+            is_reset = (x == 0.0 and y == 0.0 and val == 0.0)
+            if not is_reset:
+                if part not in _axis_tracking:
+                    _axis_tracking[part] = {"t_start": t_now, "from": (x, y, val)}
+                _axis_tracking[part]["last"] = (x, y, val)
+                _axis_tracking[part]["t_last"] = t_now
+            else:
+                if part in _axis_tracking:
+                    seg = _axis_tracking.pop(part)
+                    fx, fy, fv = seg["from"]
+                    tx, ty, tv = seg["last"]
+                    dur = max(0.05, seg.get("t_last", t_now) - seg["t_start"])
+                    _cam_log.append((t_now, "controller_axis_seg", part, {
+                        "from": (fx, fy, fv), "to": (tx, ty, tv), "dur": dur,
+                    }))
     # Unknown event types (e.g. 'noop') are ignored on purpose.
 
     if _track_cam[0] and etype == "scroll":
@@ -257,6 +285,8 @@ def _action_intrinsic(action_type, p):
         return float(p.get("holdMs", 0)) / 1000.0 + 0.05
     if action_type == "mousedrag":
         return float(p.get("durationMs", 0)) / 1000.0
+    if action_type == "controlleraxis":
+        return 1.0
     if action_type == "mouseclick":
         return 0.12 * max(1, int(p.get("count", 1)))
     if action_type == "scroll":
@@ -269,7 +299,7 @@ def _action_intrinsic(action_type, p):
 # ── Held actions (length = clip length, no in-modal hold/duration) ────
 # Their key-hold / drag spans the whole clip; the timeline length is the only
 # control over how long they last.
-_HELD = {"keypress", "keycombo", "mousedrag", "wait"}
+_HELD = {"keypress", "keycombo", "mousedrag", "controlleraxis", "wait"}
 
 
 def _held_events(action_type, p, duration):
@@ -302,6 +332,29 @@ def _held_events(action_type, p, duration):
             evs.append({"t": lead + span * (i / steps), "type": "rmove",
                         "dx": (tx - fx) / steps, "dy": (ty - fy) / steps})
         evs.append({"t": end, "type": "rbtn", "action": "up", "button": btn})
+        return evs
+    if action_type == "controlleraxis":
+        part = p.get("part", "left_stick")
+        # Backward compatibility with the earlier single-value schema.
+        from_x = float(p.get("fromX", 0.0) or 0.0)
+        from_y = float(p.get("fromY", 0.0) or 0.0)
+        to_x = float(p.get("toX", p.get("x", 0.0)) or 0.0)
+        to_y = float(p.get("toY", p.get("y", 0.0)) or 0.0)
+        from_value = float(p.get("fromValue", 0.0) or 0.0)
+        to_value = float(p.get("toValue", p.get("value", 0.0)) or 0.0)
+        steps = max(2, min(90, int(end / 0.016)))
+        evs = []
+        for i in range(steps + 1):
+            f = i / steps
+            evs.append({
+                "t": end * f,
+                "type": "controller_axis",
+                "part": part,
+                "x": from_x + (to_x - from_x) * f,
+                "y": from_y + (to_y - from_y) * f,
+                "value": from_value + (to_value - from_value) * f,
+            })
+        evs.append({"t": end, "type": "controller_axis", "part": part, "x": 0.0, "y": 0.0, "value": 0.0})
         return evs
     return []  # wait → no events; only reserves the clip's duration
 
@@ -377,35 +430,99 @@ def _set_phase(phase):
 
 def _do_rewind(total):
     """
-    Play the execution BACKWARD by replaying logged reversible motion in reverse
-    order, inverted, with mirrored timing.
+    Play the execution BACKWARD by replaying logged reversible motion with
+    mirrored, inverted values.  All log entries are first expanded into a
+    flat list of (rewind_t, callable) pairs and sorted by rewind_t so that
+    events from parallel layers fire concurrently against a shared clock —
+    the same model as the forward _build_queue / dispatch loop.
+
+    Mapping: a forward event at time t fires at rewind time (total - t).
+    For controller_axis_seg the segment spans [t - dur, t] forward, so in
+    the rewind it spans [total - t, total - t + dur].
     """
-    log = sorted(_cam_log, key=lambda e: e[0], reverse=True)  # latest forward motion first
+    log = _cam_log[:]
     if not log:
         return
+
     has_pan = any(e[1] == "rmove" for e in log)
-    if has_pan:
-        input_driver.raw_button("right", True)   # hold RMB so the pan registers
-        _sleep(0.05)
-    prev_t = total
+
+    # ── Build flat rewind event list ─────────────────────────────────
+    rewind_events = []   # list of (rewind_t, callable)
+
     for (t, kind, a, b) in log:
-        if _state["stop"].is_set():
-            break
-        _sleep(max(0.0, prev_t - t))             # mirror the original gap between events
-        prev_t = t
+        rt = total - t   # rewind clock time for this log entry
+
         if kind == "rmove":
-            input_driver.raw_move_relative(-a, -b)
+            rewind_events.append((rt, lambda _a=a, _b=b:
+                                  input_driver.raw_move_relative(-_a, -_b)))
+
         elif kind == "scroll":
-            input_driver.scroll(0, -a)
+            rewind_events.append((rt, lambda _a=a:
+                                  input_driver.scroll(0, -_a)))
+
+        elif kind == "controller_axis_seg":
+            # t is the end of the forward segment; the inverted segment
+            # starts at rt = total - t and lasts `dur` seconds.
+            part_name = a
+            fx, fy, fv = b["from"]
+            tx, ty, tv = b["to"]
+            dur = max(0.05, b["dur"])
+            is_trigger = "trigger" in part_name
+            if is_trigger:
+                # Triggers 0..1: swap initial ↔ target, no negation.
+                inv_fx, inv_fy, inv_fv = 0.0, 0.0, tv
+                inv_tx, inv_ty, inv_tv = 0.0, 0.0, fv
+            else:
+                # Sticks -1..1: negate and swap.
+                inv_fx, inv_fy, inv_fv = -tx, -ty, fv
+                inv_tx, inv_ty, inv_tv = -fx, -fy, tv
+            steps = max(2, min(90, int(dur / 0.016)))
+            for i in range(steps + 1):
+                f = i / steps
+                step_rt = rt + dur * f
+                x = inv_fx + (inv_tx - inv_fx) * f
+                y = inv_fy + (inv_ty - inv_fy) * f
+                v = inv_fv + (inv_tv - inv_fv) * f
+                rewind_events.append((step_rt, lambda _p=part_name, _x=x, _y=y, _v=v:
+                                      input_driver.controller_axis(_p, _x, _y, _v)))
+            # Zero-reset after the segment ends.
+            rewind_events.append((rt + dur, lambda _p=part_name:
+                                  input_driver.controller_axis(_p, 0.0, 0.0, 0.0)))
+
         elif kind == "key":
             spec = _motion_key_map[0].get(a) or {}
             mode = spec.get("mode", "opposite")
             key = a if mode == "same" else spec.get("target") or _REVERSIBLE_KEY_OPPOSITES.get(a)
-            action = "down" if b == "up" else "up"
-            if key and action == "down":
-                input_driver.key_press(key)
-            elif key:
-                input_driver.key_release(key)
+            rev_action = "down" if b == "up" else "up"
+            if key:
+                if rev_action == "down":
+                    rewind_events.append((rt, lambda _k=key: input_driver.key_press(_k)))
+                else:
+                    rewind_events.append((rt, lambda _k=key: input_driver.key_release(_k)))
+
+    if not rewind_events:
+        return
+
+    rewind_events.sort(key=lambda e: e[0])
+
+    # ── Dispatch against a shared absolute rewind clock ──────────────
+    if has_pan:
+        input_driver.raw_button("right", True)   # hold RMB for camera pan
+        _sleep(0.05)
+
+    t0 = time.perf_counter()
+    for (rt, fn) in rewind_events:
+        if _state["stop"].is_set():
+            break
+        # Wait until elapsed rewind time reaches rt.
+        while not _state["stop"].is_set():
+            remaining = rt - (time.perf_counter() - t0)
+            if remaining <= 0:
+                break
+            time.sleep(min(0.005, remaining))
+        if not _state["stop"].is_set():
+            fn()
+
     if has_pan:
         _sleep(0.04)
         input_driver.raw_button("right", False)
@@ -416,6 +533,7 @@ def _worker(execution):
     try:
         # Reset the camera log; record motion only on the forward pass.
         _cam_log.clear()
+        _axis_tracking.clear()
         _motion_key_map[0] = _normalize_motion_key_map(execution.get("motionKeyMap"))
         _track_cam[0] = motion_controlled
 
@@ -477,6 +595,10 @@ def _safe_release_all():
             input_driver.raw_button(btn, False)   # also release any SendInput-held button
         except Exception:
             pass
+    try:
+        input_driver.controller_axis_reset()
+    except Exception:
+        pass
 
 
 # ── Public API ────────────────────────────────────────────────────────

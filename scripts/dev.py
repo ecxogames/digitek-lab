@@ -3,6 +3,7 @@ import time
 import subprocess
 import sys
 import shutil
+import stat
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 try:
@@ -52,10 +53,69 @@ def clean_build():
     if not os.path.exists(BUILD_DIR):
         return
     print("[Dev] Clearing build directory...")
-    shutil.rmtree(BUILD_DIR)
+    stop_existing_engine_processes()
+
+    def on_rm_error(func, path, exc_info):
+        try:
+            os.chmod(path, stat.S_IWRITE)
+            func(path)
+        except PermissionError:
+            stop_existing_engine_processes()
+            time.sleep(0.4)
+            func(path)
+
+    shutil.rmtree(BUILD_DIR, onerror=on_rm_error)
+
+def stop_existing_engine_processes():
+    """Release stale dev binaries so Windows lets the build dir be removed."""
+    if os.name != 'nt':
+        return
+    try:
+        subprocess.run(
+            ['taskkill', '/F', '/IM', 'ESDEngine.exe', '/T'],
+            capture_output=True,
+            text=True,
+        )
+        time.sleep(0.3)
+    except Exception as e:
+        print(f"[Dev] Warning: could not stop stale ESDEngine.exe processes: {e}")
+
+def stop_app_process(app_process=None):
+    """Stop the tracked app process and any Windows process tree still using ESDEngine.exe."""
+    if app_process and app_process.poll() is None:
+        try:
+            app_process.terminate()
+            app_process.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            try:
+                app_process.kill()
+                app_process.wait(timeout=2)
+            except Exception:
+                pass
+        except Exception:
+            pass
+    stop_existing_engine_processes()
+
+def wait_for_exe_release(timeout=5):
+    """Give Windows a moment to unlock the output binary before the linker writes it."""
+    exe = get_exe_path()
+    if os.name != 'nt' or not exe:
+        return True
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            with open(exe, 'ab'):
+                return True
+        except PermissionError:
+            stop_existing_engine_processes()
+            time.sleep(0.25)
+    return False
 
 def build_project():
     print("[Dev] Building project...")
+    stop_existing_engine_processes()
+    if not wait_for_exe_release():
+        print("[Dev] Warning: ESDEngine.exe is still locked; build may fail if Windows has not released it yet.")
     try:
         prepare_icon()
         cache_file = os.path.join(BUILD_DIR, "CMakeCache.txt")
@@ -154,7 +214,7 @@ def main():
         exe = get_exe_path()
         if exe:
             print(f"[Dev] Launching existing binary: {exe}")
-            app_process = subprocess.Popen([exe])
+            app_process = launch_exe()
         else:
             print("[Dev] No previous build found — running a fresh build instead.")
             app_process = start_app(fresh=True)
@@ -171,18 +231,13 @@ def main():
             if current_mtime > last_mtime:
                 print("\n[Dev] File changes detected — rebuilding...")
 
-                if app_process and app_process.poll() is None:
-                    app_process.terminate()
-                    app_process.wait()
-
+                stop_app_process(app_process)
                 app_process = start_app(fresh=False)
                 last_mtime = get_latest_mtime()
 
     except KeyboardInterrupt:
         print("\n[Dev] Shutting down.")
-        if app_process and app_process.poll() is None:
-            app_process.terminate()
-            app_process.wait()
+        stop_app_process(app_process)
         sys.exit(0)
 
 if __name__ == '__main__':

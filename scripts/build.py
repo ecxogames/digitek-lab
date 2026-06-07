@@ -60,7 +60,12 @@ def run_cmake_build(embed_html=False):
         except OSError:
             pass
 
-    cmake_configure = ["cmake", "-B", "build"]
+    cmake_configure = [
+        "cmake",
+        "-B",
+        "build",
+        f"-DESD_PYTHON_EXECUTABLE:FILEPATH={sys.executable}",
+    ]
     if embed_html:
         cmake_configure.append("-DESD_EMBED_HTML=ON")
         print("[Info] HTML embedding enabled — UI pages will be baked into the binary.")
@@ -77,6 +82,36 @@ def find_exe():
         if os.path.exists(b):
             return b
     return None
+
+def bundle_tkinter(dist_dir):
+    print(" -> Bundling Tkinter / Tcl runtime for native dialogs...")
+    py_root = os.path.abspath(os.path.dirname(sys.executable))
+    stdlib_dir = os.path.join(py_root, "Lib")
+    dll_dir = os.path.join(py_root, "DLLs")
+
+    try:
+        tkinter_src = os.path.join(stdlib_dir, "tkinter")
+        tcl_src = os.path.join(py_root, "tcl")
+        if not os.path.isdir(tkinter_src):
+            raise FileNotFoundError(f"Missing tkinter package: {tkinter_src}")
+        if not os.path.isdir(tcl_src):
+            raise FileNotFoundError(f"Missing Tcl data folder: {tcl_src}")
+
+        shutil.copytree(tkinter_src, os.path.join(dist_dir, "tkinter"))
+        shutil.copytree(tcl_src, os.path.join(dist_dir, "tcl"))
+
+        for name in ("_tkinter.pyd", "tcl86t.dll", "tk86t.dll"):
+            src = os.path.join(dll_dir, name)
+            if not os.path.exists(src):
+                src = os.path.join(py_root, name)
+            if not os.path.exists(src):
+                raise FileNotFoundError(f"Missing Tkinter runtime file: {name}")
+            shutil.copy(src, dist_dir)
+
+        print("    [Success] Bundled Tkinter native dialog support.")
+    except Exception as e:
+        print(f"    [Warning] Could not bundle Tkinter automatically: {e}")
+        print("    Import/export and demo modal actions may fail in standalone builds.")
 
 def build_regular():
     print_header("REGULAR BUILD (Local Testing Only)")
@@ -140,22 +175,42 @@ def build_standalone():
     print(" -> Copying Server assets...")
     shutil.copytree("server", os.path.join(dist_dir, "server"))
 
+    print(" -> Copying Python backend support modules...")
+    for package_dir in ("public", "private"):
+        if os.path.exists(package_dir):
+            shutil.copytree(package_dir, os.path.join(dist_dir, package_dir))
+
+    if os.path.exists("data"):
+        print(" -> Copying bundled sample data...")
+        shutil.copytree("data", os.path.join(dist_dir, "data"))
+
+    # HTML pages are embedded in the executable, but the native modal system
+    # still reads modal templates/config from disk at runtime.
+    modal_ui_dir = os.path.join("ui", "modals")
+    splash_config = os.path.join("ui", "splash", "properties.config")
+    if os.path.exists(modal_ui_dir):
+        print(" -> Copying runtime modal UI templates...")
+        shutil.copytree(modal_ui_dir, os.path.join(dist_dir, "ui", "modals"))
+    if os.path.exists(splash_config):
+        os.makedirs(os.path.join(dist_dir, "ui", "splash"), exist_ok=True)
+        shutil.copy(splash_config, os.path.join(dist_dir, "ui", "splash"))
+
     if os.path.exists("properties.config"):
         shutil.copy("properties.config", dist_dir)
 
-    print(" -> Bundling Python backend dependencies (pynput)...")
+    print(" -> Bundling Python backend dependencies (pynput, vgamepad)...")
     # The embeddable Python's default _pth puts the exe dir ('.') on sys.path, so
     # installing packages into the dist root makes them importable at runtime.
     try:
         subprocess.run(
-            [sys.executable, "-m", "pip", "install", "pynput", "--target", dist_dir,
+            [sys.executable, "-m", "pip", "install", "pynput", "vgamepad", "--target", dist_dir,
              "--no-compile", "--upgrade"],
             check=True)
-        print("    [Success] Bundled pynput into the standalone runtime.")
+        print("    [Success] Bundled pynput and vgamepad into the standalone runtime.")
     except Exception as e:
         print(f"    [Warning] Could not bundle pynput automatically: {e}")
-        print("    Record/playback will be disabled in the distributed build until")
-        print("    pynput is installed into the embedded Python manually.")
+        print("    Record/playback or Controller Axis actions may be disabled in the distributed build until")
+        print("    pynput and vgamepad are installed into the embedded Python manually.")
 
     print(" -> Bundling Visual C++ Runtime libraries...")
     # Bundle MSVCP140.dll and VCRUNTIME to prevent "DLL not found" on fresh Windows
@@ -175,6 +230,7 @@ def build_standalone():
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(dist_dir)
         os.remove(zip_path)
+        bundle_tkinter(dist_dir)
         print(f"\n[Success] Standalone build complete! Location: {os.path.abspath(dist_dir)}")
         print("You can zip this folder and send it to anyone. No installation is required!")
     except Exception as e:

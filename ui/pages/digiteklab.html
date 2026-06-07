@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DigiTek Lab</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="stylesheet" href="stylesheets/index.css" />
+</head>
+<body>
+  <div class="gridOverlay"></div>
+
+  <div class="support-overlay" id="supportOverlay">
+    <div class="support-card">
+      <div class="support-head">
+        <span class="material-symbols-outlined" id="supportIcon">download</span>
+        <div>
+          <div class="support-title" id="supportTitle">Setting up controller support</div>
+          <div class="support-sub" id="supportSub">DigiTek Lab is preparing virtual Xbox controller support.</div>
+        </div>
+      </div>
+      <div class="support-progress"><div class="support-progress-fill" id="supportProgressFill"></div></div>
+      <div class="support-phase"><span id="supportPhase">Starting</span><span class="support-percent" id="supportPercent">0%</span></div>
+      <div class="support-detail" id="supportDetail">Starting...</div>
+      <div class="support-actions">
+        <button class="GTextBtn ghost" id="supportCloseBtn" style="display:none" onclick="hideControllerSupportProgress()">Close</button>
+      </div>
+    </div>
+    <pre class="support-log-panel" id="supportLogPanel" aria-live="polite">Waiting for installer output...</pre>
+    <button class="support-log-toggle" id="supportLogToggle" type="button" onclick="toggleControllerSupportLog()" title="Show installer log" aria-label="Show installer log">
+      <span class="material-symbols-outlined">terminal</span>
+    </button>
+  </div>
+
+  <div class="app">
+    <!-- Menu bar (Macro Editor) -->
+    <div class="titlebar" onmousedown="if(window.dragWindow) window.dragWindow('')">
+      <div class="tb-side">
+        <span class="mb-brand">Macro Editor</span>
+        <div class="mb-menu-wrap">
+          <button class="mb-menu" id="fileOpsGroup" onmousedown="event.stopPropagation()" onclick="toggleAppMenu(event,'menuFile')">File</button>
+          <div class="mb-dropdown" id="menuFile" onmousedown="event.stopPropagation()">
+            <button class="mb-dd-item" onclick="closeAppMenus();onNewExecution()"><span class="material-symbols-outlined">note_add</span>New execution<span class="mb-dd-key">Ctrl+N</span></button>
+            <button class="mb-dd-item" onclick="closeAppMenus();onOpenExecution()"><span class="material-symbols-outlined">folder_open</span>Open execution<span class="mb-dd-key">Ctrl+O</span></button>
+            <button class="mb-dd-item" onclick="closeAppMenus();onSaveExecution()"><span class="material-symbols-outlined">save</span>Save execution<span class="mb-dd-key">Ctrl+S</span></button>
+            <div class="mb-dd-sep"></div>
+            <button class="mb-dd-item" onclick="closeAppMenus();onImportMacro()"><span class="material-symbols-outlined">upload_file</span>Import macro</button>
+            <button class="mb-dd-item" onclick="closeAppMenus();onExportExecution()"><span class="material-symbols-outlined">ios_share</span>Export execution</button>
+            <div class="mb-dd-sep"></div>
+            <button class="mb-dd-item danger" onclick="closeAppMenus();onDeleteExecution()"><span class="material-symbols-outlined">delete</span>Delete execution</button>
+          </div>
+        </div>
+        <div class="mb-menu-wrap">
+          <button class="mb-menu" onmousedown="event.stopPropagation()" onclick="toggleAppMenu(event,'menuEdit')">Edit</button>
+          <div class="mb-dropdown" id="menuEdit" onmousedown="event.stopPropagation()">
+            <button class="mb-dd-item" onclick="closeAppMenus();onRecord()"><span class="material-symbols-outlined">fiber_manual_record</span>Record macro</button>
+            <button class="mb-dd-item" onclick="closeAppMenus();onPlayPause()"><span class="material-symbols-outlined">play_arrow</span>Play / Pause<span class="mb-dd-key">Space</span></button>
+            <button class="mb-dd-item" onclick="closeAppMenus();onStop()"><span class="material-symbols-outlined">stop</span>Stop</button>
+          </div>
+        </div>
+        <div class="mb-menu-wrap">
+          <button class="mb-menu" onmousedown="event.stopPropagation()" onclick="toggleAppMenu(event,'menuView')">View</button>
+          <div class="mb-dropdown" id="menuView" onmousedown="event.stopPropagation()">
+            <button class="mb-dd-item" onclick="closeAppMenus();zoomTimeline(1)"><span class="material-symbols-outlined">zoom_in</span>Zoom in</button>
+            <button class="mb-dd-item" onclick="closeAppMenus();zoomTimeline(-1)"><span class="material-symbols-outlined">zoom_out</span>Zoom out</button>
+            <button class="mb-dd-item" onclick="closeAppMenus();addLayer()"><span class="material-symbols-outlined">add</span>Add layer</button>
+          </div>
+        </div>
+        <div class="mb-menu-wrap">
+          <button class="mb-menu" id="menuSettingsBtn" onmousedown="event.stopPropagation()" onclick="toggleAppMenu(event,'menuSettings')">Settings</button>
+          <div class="mb-dropdown" id="menuSettings" onmousedown="event.stopPropagation()">
+            <button class="mb-dd-item" onclick="closeAppMenus();onMotionToggle()"><span class="material-symbols-outlined">control_camera</span>Toggle Motion Control</button>
+            <button class="mb-dd-item" onclick="closeAppMenus();openMotionSettings(event)"><span class="material-symbols-outlined">tune</span>Motion Control settings</button>
+            <button class="mb-dd-item" onclick="closeAppMenus();toggleContinuous()"><span class="material-symbols-outlined">repeat</span>Continuous playback</button>
+            <div class="mb-dd-sep"></div>
+            <button class="mb-dd-item" onclick="closeAppMenus();startTour()"><span class="material-symbols-outlined">help</span>Guided tour</button>
+          </div>
+        </div>
+      </div>
+      <div class="tb-side right">
+        <button class="win-btn title-play-btn" id="titlePlayBtn" onmousedown="event.stopPropagation()" onclick="onPlayPause()" title="Play / Pause execution (Space)" aria-label="Play / Pause">
+          <span class="material-symbols-outlined" id="titlePlayIcon">play_arrow</span>
+        </button>
+        <span class="status-pill">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-pre">Status:</span>
+          <span class="status-val" id="statusMsg">Ready</span>
+        </span>
+        <button class="win-btn" onmousedown="event.stopPropagation()" onclick="if(window.windowMinimize) window.windowMinimize()" title="Minimize" aria-label="Minimize">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M240-440v-80h480v80H240Z"/></svg>
+        </button>
+        <button class="win-btn close-btn" onmousedown="event.stopPropagation(); event.preventDefault();" onclick="if(window.windowClose) window.windowClose()" title="Close" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="Toolbar">
+      <button class="ToolBtn" id="recordBtn" title="Record a new macro" onclick="onRecord()">
+        <span class="material-symbols-outlined">fiber_manual_record</span>
+      </button>
+      <div class="ToolbarDivider"></div>
+      <button class="ToolBtn" id="undoBtn" title="Undo (Ctrl+Z)" onclick="undo()" disabled>
+        <span class="material-symbols-outlined">undo</span>
+      </button>
+      <button class="ToolBtn" id="redoBtn" title="Redo (Ctrl+Y)" onclick="redo()" disabled>
+        <span class="material-symbols-outlined">redo</span>
+      </button>
+      <div class="ToolbarDivider"></div>
+      <button class="ToolBtn" id="deleteBtn" title="Delete selected clip (Del)" onclick="deleteSelectedClip()">
+        <span class="material-symbols-outlined">delete</span>
+      </button>
+      <input type="checkbox" id="motionToggle" hidden>
+    </div>
+
+    <div class="input-warning" id="inputWarning">
+      <span class="material-symbols-outlined">warning</span>
+      <span id="inputWarningText"></span>
+    </div>
+
+    <!-- Workspace -->
+    <div class="workspace">
+      <!-- Timeline -->
+      <div class="timeline-panel">
+        <!-- Playbar: transport · timecode · zoom -->
+        <div class="tlx-playbar">
+          <div class="tlx-transport">
+            <button class="tlx-tbtn" title="Stop / rewind to start" onclick="onStop()"><span class="material-symbols-outlined">skip_previous</span></button>
+            <button class="tlx-tbtn" title="Previous clip" onclick="focusAdjacentClip('prev')"><span class="material-symbols-outlined">chevron_left</span></button>
+            <button class="tlx-tbtn play" id="playBtn" title="Play / Pause execution (Space)" onclick="onPlayPause()"><span class="material-symbols-outlined" id="playIcon">play_arrow</span></button>
+            <button class="tlx-tbtn" title="Next clip" onclick="focusAdjacentClip('next')"><span class="material-symbols-outlined">chevron_right</span></button>
+            <button class="tlx-tbtn" title="Last clip" onclick="focusAdjacentClip('end')"><span class="material-symbols-outlined">skip_next</span></button>
+          </div>
+          <div class="tlx-timecode" id="timecode">00:00:00</div>
+          <div class="tlx-zoomwrap">
+            <span class="tlx-zoom-text">Zoom</span>
+            <button class="tlx-zicon" title="Zoom out" onclick="zoomTimeline(-1)"><span class="material-symbols-outlined">remove</span></button>
+            <div class="tlx-zoom-pct" id="tlxZoomLabel">100%</div>
+            <button class="tlx-zicon" title="Zoom in" onclick="zoomTimeline(1)"><span class="material-symbols-outlined">add</span></button>
+          </div>
+        </div>
+        <!-- Header: title · snap · add track -->
+        <div class="tlx-header">
+          <span class="tlx-header-title">Timeline</span>
+          <button class="tlx-snap active" id="snapBtn" onclick="toggleSnap()" title="Snapping on — click to disable"><span class="material-symbols-outlined">grid_on</span></button>
+          <button class="tlx-track-btn" onclick="addLayer()" title="Add a layer"><span class="material-symbols-outlined">add</span>Track</button>
+        </div>
+        <!-- Tracks: ruler + (track heads | lanes) -->
+        <div class="tlx-tracks">
+          <div class="tlx-ruler-row">
+            <div class="tlx-ruler-corner"></div>
+            <div class="tlx-ruler-wrap" id="tlxRulerWrap"><div class="tlx-ruler" id="tlxRuler"></div></div>
+          </div>
+          <div class="tlx-tracks-body">
+            <div class="tlx-heads" id="tlxHeads"><div class="tlx-heads-inner" id="tlxHeadsInner"></div></div>
+            <div class="tlx-scroll" id="tlxScroll">
+              <div class="tlx-lanes" id="tlxLanes"
+                   ondragover="onLanesDragOver(event)" ondragleave="onLanesDragLeave(event)" ondrop="onLanesDrop(event)">
+                <div class="tlx-playhead" id="tlxPlayhead"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action List -->
+      <div class="actionlist-panel">
+        <div class="panel-head al-head">
+          <span class="panel-title">Action List</span>
+          <button class="al-mini" title="Import macro from file" onclick="onImportMacro()"><span class="material-symbols-outlined">upload_file</span></button>
+        </div>
+        <div class="actionlist-body" id="actionListBody"></div>
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="statusbar">
+      <span class="status-item"><span class="sb-dot"></span><span id="execNameLabel">Untitled Execution</span></span>
+      <span class="status-item" id="continuousStatus" style="display:none;"><span class="material-symbols-outlined">repeat</span>Continuous playback</span>
+      <span class="statusbar-spacer"></span>
+      <span class="status-item sb-hotkeys" id="hotkeyHint"></span>
+      <span class="status-item" id="timelineMeta">0 clips</span>
+    </div>
+  </div>
+
+  <!-- Param / name modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <span class="material-symbols-outlined" id="modalIcon">tune</span>
+        <h3 id="modalTitle">Configure</h3>
+        <button class="x" onclick="closeAppModal()"><span class="material-symbols-outlined">close</span></button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-foot">
+        <button class="GTextBtn ghost" onclick="closeAppModal()">Cancel</button>
+        <button class="GTextBtn primary" id="modalOk" onclick="onModalOk()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Countdown -->
+  <div class="countdown" id="countdown">
+    <div class="countdown-num" id="countdownNum">3</div>
+    <div class="countdown-sub" id="countdownSub">Switch to Roblox…</div>
+  </div>
+
+  <!-- Recording banner -->
+  <div class="rec-banner" id="recBanner">
+    <span class="rec-dot"></span>
+    <span class="rec-text">Recording</span>
+    <span class="rec-time" id="recTime">0.0s</span>
+    <button class="GTextBtn" onclick="finishRecording()"><span class="material-symbols-outlined">stop</span>Stop</button>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <!-- Spotlight tutorial -->
+  <div class="tour-block" id="tourBlock"></div>
+  <div class="tour-hole" id="tourHole"></div>
+  <div class="tour-tip" id="tourTip">
+    <div class="tour-tip-head">
+      <span class="material-symbols-outlined" id="tourIcon">tips_and_updates</span>
+      <span class="tour-tip-title" id="tourTitle"></span>
+    </div>
+    <div class="tour-tip-body" id="tourBody"></div>
+    <div class="tour-tip-foot">
+      <span class="tour-count" id="tourCount"></span>
+      <div class="tour-tip-btns">
+        <button class="tour-skip" id="tourSkip" onclick="endTour(true)">Skip</button>
+        <button class="GTextBtn ghost" id="tourBack" onclick="prevTourStep()">Back</button>
+        <button class="GTextBtn primary" id="tourNext" onclick="nextTourStep()">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu-bar dropdown handling -->
+  <script>
+    function closeAppMenus() {
+      document.querySelectorAll('.mb-dropdown.open').forEach(d => d.classList.remove('open'));
+      document.querySelectorAll('.mb-menu.open').forEach(b => b.classList.remove('open'));
+    }
+    function toggleAppMenu(event, id) {
+      event.stopPropagation();
+      const dd = document.getElementById(id);
+      const btn = event.currentTarget;
+      const isOpen = dd.classList.contains('open');
+      closeAppMenus();
+      if (!isOpen) { dd.classList.add('open'); btn.classList.add('open'); }
+    }
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.mb-menu-wrap')) closeAppMenus();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAppMenus(); });
+  </script>
+
+  <script src="scripts/index.js"></script>
+</body>
+</html>

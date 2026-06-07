@@ -1,666 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DigiTek Lab</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --color-bg:            #DCDCDC;
-      --color-text:          rgba(0,0,0,0.85);
-      --color-text-muted:    rgba(0,0,0,0.5);
-      --color-text-subtle:   rgba(0,0,0,0.35);
-      --color-primary:       rgba(99,102,241,1);
-      --color-primary-bg:    rgba(99,102,241,0.25);
-      --color-primary-border:rgba(99,102,241,0.45);
-      --color-primary-glow:  rgba(99,102,241,0.2);
-      --color-success:       rgba(34,197,94,0.85);
-      --color-success-bg:    rgba(34,197,94,0.2);
-      --color-success-border:rgba(34,197,94,0.4);
-      --color-danger:        rgba(239,68,68,0.85);
-      --color-danger-bg:     rgba(239,68,68,0.2);
-      --color-danger-border: rgba(239,68,68,0.4);
-      --color-warning:       rgba(234,179,8,0.85);
-      --glass-bg:            rgba(255,255,255,0.2);
-      --glass-bg-light:      rgba(255,255,255,0.4);
-      --glass-bg-strong:     rgba(255,255,255,0.65);
-      --glass-border:        rgba(255,255,255,0.4);
-      --glass-shadow:        0 8px 32px rgba(0,0,0,0.1), inset 0 1px 1px rgba(255,255,255,0.6);
-      --glass-shadow-lg:     0 20px 60px rgba(0,0,0,0.15), inset 0 1px 1px rgba(255,255,255,0.6);
-      --font-primary:   'Roboto', 'Segoe UI', Tahoma, sans-serif;
-      --font-mono:      'Consolas', 'Courier New', monospace;
-      --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-xl:20px; --radius-pill:100px;
-      --transition-fast:0.15s ease; --transition-base:0.2s ease; --transition-slow:0.3s ease;
-    }
-
-    html, body { height: 100%; }
-    body {
-      font-family: var(--font-primary);
-      background: var(--color-bg);
-      color: var(--color-text);
-      line-height: 1.5;
-      overflow: hidden;
-      position: relative;
-    }
-
-    /* Decorative dot grid background */
-    .gridOverlay {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background-image: radial-gradient(circle, rgba(99,102,241,0.10) 1.5px, transparent 1.5px),
-                        radial-gradient(circle, rgba(99,102,241,0.05) 1px, transparent 1px);
-      background-size: 22px 22px, 110px 110px;
-    }
-
-    .app { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; }
-
-    /* ── Titlebar (Techtoby OS glass style) ── */
-    .titlebar {
-      position: relative; width: 100%; flex-shrink: 0; padding: 4px;
-      display: flex; align-items: center; justify-content: space-between; box-sizing: border-box;
-      z-index: 1000; user-select: none;
-      background: rgba(255,255,255,0.25);
-      backdrop-filter: blur(20px) saturate(1.8); -webkit-backdrop-filter: blur(20px) saturate(1.8);
-      border-bottom: 1px solid rgba(255,255,255,0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    .titlebar button {
-      background: transparent; border: none; padding: 8px; cursor: pointer; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;
-    }
-    .titlebar button:hover { background: rgba(255,255,255,0.45); box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-    .titlebar button:active { transform: scale(0.92); }
-    .titlebar button svg { fill: #444; width: 20px; height: 20px; transition: fill 0.2s ease; }
-    .titlebar button:hover svg { fill: #000; }
-    .titlebar .close-btn:hover { background: rgba(239,68,68,0.18); }
-    .titlebar .close-btn:hover svg { fill: #ef4444; }
-    .tb-side { display: flex; align-items: center; width: 96px; }
-    .tb-side.right { justify-content: flex-end; }
-    .app-title {
-      flex: 1; text-align: center; font-family: var(--font-primary);
-      font-size: 1.05rem; font-weight: 600; color: #1a1a1a; letter-spacing: 0.02em;
-      user-select: none; pointer-events: none; text-shadow: 0 1px 3px rgba(255,255,255,0.6);
-      line-height: 1.1;
-    }
-    .app-title .hk {
-      display: block; font-size: 10px; font-weight: 500; letter-spacing: 0;
-      color: var(--color-text-subtle); text-shadow: none; margin-top: 1px;
-    }
-    /* Toggle (active) state for titlebar buttons, e.g. Continuous Playback */
-    .titlebar button.active { background: rgba(99,102,241,0.22); }
-    .titlebar button.active svg { fill: #6366f1; }
-    .titlebar button.active:hover { background: rgba(99,102,241,0.3); }
-
-    /* ── Status bar (bottom) ── */
-    .statusbar {
-      flex-shrink: 0; height: 26px; display: flex; align-items: center; gap: 14px;
-      padding: 0 14px; font-size: 11px; color: var(--color-text-muted); user-select: none;
-      background: rgba(255,255,255,0.25);
-      backdrop-filter: blur(20px) saturate(1.8); -webkit-backdrop-filter: blur(20px) saturate(1.8);
-      border-top: 1px solid rgba(255,255,255,0.4); box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
-    }
-    .statusbar .status-item { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
-    .statusbar .status-item .material-symbols-outlined { font-size: 14px; }
-    .statusbar-spacer { flex: 1; }
-    .statusbar .sb-hotkeys { font-family: var(--font-mono); color: var(--color-text-subtle); }
-    #continuousStatus { color: var(--color-primary); }
-
-    /* ── Toolbar ── */
-    .Toolbar {
-      margin: 4px 16px 0; border-radius: var(--radius-lg);
-      background: var(--glass-bg); backdrop-filter: blur(16px);
-      border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow);
-      padding: 10px 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    }
-    .ToolbarDivider { width: 1px; height: 26px; background: rgba(0,0,0,0.1); flex-shrink: 0; }
-    .ToolbarGroup { display: flex; align-items: center; gap: 6px; }
-
-    .ToolBtn {
-      height: 38px; min-width: 38px; padding: 0 10px; border: 1px solid var(--glass-border);
-      border-radius: 10px; background: rgba(255,255,255,0.18); cursor: pointer;
-      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      transition: all var(--transition-fast); color: rgba(0,0,0,0.7);
-      font-family: var(--font-primary); font-size: 13px; font-weight: 500; white-space: nowrap;
-    }
-    .ToolBtn:hover { background: var(--glass-bg-light); color: rgba(0,0,0,0.85); }
-    .ToolBtn:active { transform: scale(0.96); }
-    .ToolBtn .material-symbols-outlined { font-size: 20px; }
-    .ToolBtn.primary { background: var(--color-primary-bg); border-color: var(--color-primary-border); color: var(--color-primary); }
-    .ToolBtn.primary:hover { background: rgba(99,102,241,0.4); }
-    .ToolBtn.danger  { background: var(--color-danger-bg); border-color: var(--color-danger-border); color: var(--color-danger); }
-    .ToolBtn.success { background: var(--color-success-bg); border-color: var(--color-success-border); color: var(--color-success); }
-    .ToolBtn.recording { background: var(--color-danger-bg); border-color: var(--color-danger-border); color: var(--color-danger); animation: pulse 1.4s ease-in-out infinite; }
-    .ToolBtn:disabled { opacity: 0.4; pointer-events: none; }
-    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3);} 50% { box-shadow: 0 0 0 6px rgba(239,68,68,0);} }
-
-    .exec-name-wrap { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 180px; }
-    .exec-name-input {
-      flex: 1; min-width: 120px; background: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.5);
-      color: black; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
-      outline: none; backdrop-filter: blur(4px); transition: all var(--transition-base); font-family: var(--font-primary);
-    }
-    .exec-name-input:focus { background: rgba(255,255,255,0.5); border-color: rgba(99,102,241,0.6); box-shadow: 0 0 0 3px var(--color-primary-glow); }
-
-    .toggle-wrap { display: flex; align-items: center; gap: 9px; }
-    .motion-card { padding: 6px 8px; margin: -6px -4px; border-radius: var(--radius-sm); cursor: pointer; transition: all var(--transition-fast); }
-    .motion-card:hover { background: rgba(255,255,255,0.28); }
-    .toggle-label { font-size: 12px; font-weight: 500; color: var(--color-text-muted); white-space: nowrap; display: flex; align-items: center; gap: 5px; }
-    .toggle-label .material-symbols-outlined { font-size: 17px; }
-    .toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; display: inline-block; }
-    .toggle input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: rgba(0,0,0,0.15); transition: 0.3s; border-radius: 22px; }
-    .toggle-slider::before { content:""; position:absolute; height:16px; width:16px; left:3px; bottom:3px; background:#fff; transition:0.3s; border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
-    .toggle input:checked + .toggle-slider { background: rgba(99,102,241,0.7); }
-    .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
-
-    /* ── Main split ── */
-    .workspace { flex: 1; display: flex; gap: 16px; padding: 16px; min-height: 0; }
-
-    .timeline-panel, .actionlist-panel {
-      background: var(--glass-bg); backdrop-filter: blur(16px);
-      border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
-      box-shadow: var(--glass-shadow); display: flex; flex-direction: column; min-height: 0;
-    }
-    .timeline-panel { flex: 1; }
-    .actionlist-panel { width: 330px; flex-shrink: 0; }
-
-    .panel-head {
-      padding: 14px 18px; border-bottom: 1px solid rgba(0,0,0,0.08);
-      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
-    }
-    .panel-head .material-symbols-outlined { font-size: 20px; color: rgba(99,102,241,0.7); }
-    .panel-title { font-size: 14px; font-weight: 600; color: rgba(0,0,0,0.8); }
-    .panel-meta { margin-left: auto; font-size: 11px; color: var(--color-text-muted); font-family: var(--font-mono); }
-
-    /* Timeline */
-    .timeline-body { flex: 1; overflow: auto; padding: 18px; min-height: 0; }
-
-    /* Legend in the panel head */
-    .tl-legend { display: flex; align-items: center; gap: 12px; margin-left: auto; }
-    .tl-legend .lg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--color-text-muted); }
-    .tl-legend .dot { width: 9px; height: 9px; border-radius: 3px; }
-    .tl-legend .dot.macro  { background: rgba(99,102,241,0.7); }
-    .tl-legend .dot.core   { background: rgba(234,179,8,0.8); }
-    .tl-legend .dot.action { background: rgba(34,197,94,0.7); }
-
-    /* Time ruler above the track */
-    .timeline-ruler { display: flex; gap: 10px; padding: 0 4px; margin-bottom: 8px; min-height: 16px; }
-    .tl-rseg { position: relative; flex-shrink: 0; height: 16px; border-left: 1px solid rgba(0,0,0,0.16); }
-    .tl-rseg.tl-rend { border-left: none; border-right: 1px solid rgba(0,0,0,0.16); width: 0; }
-    .tl-rtick { position: absolute; left: 5px; top: 1px; font-size: 10px; font-family: var(--font-mono); color: var(--color-text-subtle); white-space: nowrap; }
-    .tl-rseg.tl-rend .tl-rtick { left: auto; right: 4px; }
-
-    .timeline-track {
-      display: flex; align-items: stretch; gap: 10px; min-height: 104px;
-      padding: 4px; border-radius: var(--radius-md);
-    }
-    .timeline-track.dragover { background: rgba(99,102,241,0.07); outline: 2px dashed rgba(99,102,241,0.35); outline-offset: -4px; }
-
-    .tl-item {
-      position: relative; flex-shrink: 0; border-radius: var(--radius-md); overflow: hidden;
-      background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.6);
-      border-top-width: 3px; backdrop-filter: blur(8px); cursor: grab;
-      display: flex; flex-direction: column; gap: 4px; padding: 12px 12px 10px;
-      transition: transform var(--transition-base), box-shadow var(--transition-base);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    .tl-item:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.12); transform: translateY(-1px); }
-    .tl-item.active { border-color: rgba(99,102,241,0.6); box-shadow: 0 0 0 2px rgba(99,102,241,0.25), 0 6px 18px rgba(0,0,0,0.12); }
-    .tl-item.playing { border-top-color: var(--color-primary); background: rgba(99,102,241,0.14); box-shadow: 0 0 0 2px rgba(99,102,241,0.4), 0 8px 22px rgba(99,102,241,0.25); }
-    .tl-item.kind-macro  { border-top-color: rgba(99,102,241,0.7); }
-    .tl-item.kind-core   { border-top-color: rgba(234,179,8,0.8); }
-    .tl-item.kind-action { border-top-color: rgba(34,197,94,0.7); }
-    .tl-item-icon { display: flex; align-items: center; gap: 6px; color: rgba(0,0,0,0.55); }
-    .tl-item-icon .material-symbols-outlined { font-size: 18px; }
-    .tl-item-kind { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-    .tl-item.kind-macro  .tl-item-kind { color: rgba(99,102,241,0.85); }
-    .tl-item.kind-core   .tl-item-kind { color: rgba(180,120,0,0.95); }
-    .tl-item.kind-action .tl-item-kind { color: var(--color-success); }
-    .tl-item-name { font-size: 12px; font-weight: 600; color: rgba(0,0,0,0.82); line-height: 1.25;
-      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .tl-item-foot { margin-top: auto; display: flex; align-items: center; gap: 6px; }
-    .tl-item-start { font-size: 10px; color: var(--color-text-subtle); font-family: var(--font-mono); }
-    .tl-item-dur { font-size: 10px; color: var(--color-text-muted); font-family: var(--font-mono); margin-left: auto; }
-    .tl-item-x {
-      width: 20px; height: 20px; border: none; border-radius: 6px; background: transparent;
-      color: var(--color-text-subtle); cursor: pointer; display: grid; place-items: center;
-      transition: all var(--transition-fast); flex-shrink: 0;
-    }
-    .tl-item-x:hover { background: var(--color-danger-bg); color: var(--color-danger); }
-    .tl-item-x .material-symbols-outlined { font-size: 15px; }
-    /* Animated 'running' sweep on the active card */
-    .tl-playfill { position: absolute; left: 0; bottom: 0; height: 3px; width: 40%; display: none;
-      background: linear-gradient(90deg, transparent, var(--color-primary), transparent); }
-    .tl-item.playing .tl-playfill { display: block; animation: tlSweep 1.1s linear infinite; }
-    @keyframes tlSweep { 0% { transform: translateX(-110%); } 100% { transform: translateX(360%); } }
-
-    /* Playhead progress bar under the track */
-    .playhead-bar { margin: 14px 4px 0; height: 6px; border-radius: 3px; background: rgba(0,0,0,0.08); overflow: hidden; display: none; }
-    .playhead-bar.show { display: block; }
-    .playhead-fill { height: 100%; width: 0%; background: var(--color-primary); transition: width var(--transition-base); }
-
-    /* ── Multi-track timeline (tlx) ── */
-    .tlx-toolbar { display: flex; align-items: center; gap: 8px; padding: 0 2px 10px; flex-shrink: 0; }
-    .tlx-zoom { width: 28px; height: 28px; border: 1px solid var(--glass-border); border-radius: 8px;
-      background: rgba(255,255,255,0.25); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-      color: var(--color-text-muted); transition: all var(--transition-fast); }
-    .tlx-zoom:hover { background: var(--glass-bg-light); color: var(--color-text); }
-    .tlx-zoom .material-symbols-outlined { font-size: 18px; }
-    .tlx-zoom-label { font-size: 11px; font-family: var(--font-mono); color: var(--color-text-subtle); min-width: 54px; text-align: center; }
-    .tlx-addlayer { width: auto !important; gap: 6px; padding: 0 12px; font-family: var(--font-primary); font-size: 12px; font-weight: 500; }
-
-    .tlx-scroll { flex: 1; overflow: auto; min-height: 0; border-radius: var(--radius-md); }
-    .tlx-ruler { position: relative; height: 20px; }
-    .tlx-tick { position: absolute; top: 0; height: 20px; border-left: 1px solid rgba(0,0,0,0.14);
-      padding-left: 4px; font-size: 10px; font-family: var(--font-mono); color: var(--color-text-subtle); white-space: nowrap; }
-    .tlx-lanes { position: relative; }
-    .tlx-lane { position: absolute; left: 0; right: 0; height: 64px; border-bottom: 1px dashed rgba(0,0,0,0.09); }
-    .tlx-lane:nth-child(even) { background: rgba(255,255,255,0.05); }
-    .tlx-lane-label { position: absolute; left: 6px; top: 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
-      text-transform: uppercase; color: var(--color-text-subtle); pointer-events: none; }
-    .tlx-lanes.dragover { outline: 2px dashed rgba(99,102,241,0.4); outline-offset: -3px; background: rgba(99,102,241,0.05); }
-
-    .tlx-clip { position: absolute; height: 52px; border-radius: 10px; overflow: hidden; cursor: grab;
-      background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.7); border-top-width: 3px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; justify-content: center;
-      padding: 5px 9px; user-select: none; box-sizing: border-box; transition: box-shadow var(--transition-fast); }
-    .tlx-clip:hover { box-shadow: 0 5px 16px rgba(0,0,0,0.16); z-index: 3; }
-    .tlx-clip.selected { box-shadow: 0 0 0 2px rgba(99,102,241,0.5), 0 5px 16px rgba(0,0,0,0.16); z-index: 4; }
-    .tlx-clip.playing { box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 6px 18px rgba(99,102,241,0.3); }
-    .tlx-clip.kind-macro  { border-top-color: rgba(99,102,241,0.8); }
-    .tlx-clip.kind-core   { border-top-color: rgba(234,179,8,0.85); }
-    .tlx-clip.kind-action { border-top-color: rgba(34,197,94,0.8); }
-    .tlx-clip-name { font-size: 11px; font-weight: 600; color: rgba(0,0,0,0.82); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
-    .tlx-clip-sub { font-size: 9px; font-family: var(--font-mono); color: var(--color-text-subtle); white-space: nowrap; overflow: hidden; pointer-events: none; margin-top: 1px; }
-    .tlx-clip-content { position: absolute; left: 0; bottom: 0; height: 3px; background: rgba(99,102,241,0.4); }
-    .tlx-handle { position: absolute; top: 0; bottom: 0; width: 9px; cursor: ew-resize; z-index: 5; }
-    .tlx-handle.l { left: 0; } .tlx-handle.r { right: 0; }
-    .tlx-handle::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      width: 3px; height: 18px; border-radius: 2px; background: rgba(0,0,0,0.2); opacity: 0; transition: opacity var(--transition-fast); }
-    .tlx-clip:hover .tlx-handle::after { opacity: 1; }
-    .tlx-clip-x { position: absolute; top: 3px; right: 3px; width: 16px; height: 16px; border: none; border-radius: 5px;
-      background: rgba(255,255,255,0.55); color: var(--color-text-subtle); cursor: pointer; display: none;
-      align-items: center; justify-content: center; z-index: 6; }
-    .tlx-clip:hover .tlx-clip-x { display: inline-flex; }
-    .tlx-clip-x:hover { background: var(--color-danger-bg); color: var(--color-danger); }
-    .tlx-clip-x .material-symbols-outlined { font-size: 13px; }
-
-    .tlx-playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--color-primary);
-      box-shadow: 0 0 6px rgba(99,102,241,0.7); z-index: 7; display: none; pointer-events: none; }
-    .tlx-playhead::before { content: ''; position: absolute; top: 0; left: -4px; width: 10px; height: 7px;
-      background: var(--color-primary); clip-path: polygon(0 0, 100% 0, 50% 100%); }
-    .tlx-playhead.show { display: block; }
-
-    /* Action list */
-    .actionlist-body { flex: 1; overflow-y: auto; padding: 10px; min-height: 0; }
-    .al-section { margin-bottom: 6px; }
-    .al-section-head {
-      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
-      color: var(--color-text-muted); padding: 10px 8px 6px; display: flex; align-items: center; gap: 6px;
-    }
-    .al-section-head .material-symbols-outlined { font-size: 16px; }
-    .al-item {
-      display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px;
-      background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.4);
-      cursor: grab; transition: all var(--transition-fast); margin-bottom: 6px;
-    }
-    .al-item:hover { background: var(--glass-bg-light); transform: translateX(2px); }
-    .al-item:active { cursor: grabbing; }
-    .al-ico { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; background: rgba(99,102,241,0.12); color: rgba(99,102,241,0.85); }
-    .al-ico.green { background: rgba(34,197,94,0.14); color: var(--color-success); }
-    .al-ico.amber { background: rgba(234,179,8,0.16); color: rgba(180,120,0,0.9); }
-    .al-ico .material-symbols-outlined { font-size: 18px; }
-    .al-text { flex: 1; min-width: 0; }
-    .al-name { font-size: 13px; font-weight: 500; color: rgba(0,0,0,0.82); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .al-desc { font-size: 11px; color: var(--color-text-subtle); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .al-add { opacity: 0; color: var(--color-text-subtle); transition: opacity var(--transition-fast); }
-    .al-item:hover .al-add { opacity: 1; }
-    .al-add .material-symbols-outlined { font-size: 18px; }
-    .al-row-actions { display: flex; gap: 2px; }
-    .al-mini {
-      width: 26px; height: 26px; border: none; border-radius: 7px; background: transparent;
-      color: var(--color-text-subtle); cursor: pointer; display: grid; place-items: center; transition: all var(--transition-fast);
-    }
-    .al-mini:hover { background: var(--glass-bg-light); color: var(--color-text); }
-    .al-mini.danger:hover { background: var(--color-danger-bg); color: var(--color-danger); }
-    .al-mini .material-symbols-outlined { font-size: 16px; }
-
-    /* Empty state */
-    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 36px 24px; text-align: center; height: 100%; }
-    .empty-state-icon { font-size: 44px; color: rgba(0,0,0,0.18); }
-    .empty-state-title { font-size: 15px; font-weight: 600; color: rgba(0,0,0,0.45); }
-    .empty-state-desc  { font-size: 12px; color: rgba(0,0,0,0.32); max-width: 240px; line-height: 1.5; }
-
-    /* ── In-page modal ── */
-    .modal-overlay {
-      position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.18); backdrop-filter: blur(6px);
-    }
-    .modal-overlay.show { display: flex; }
-    .modal-card {
-      width: 100%; max-width: 420px; background: rgba(255,255,255,0.4); backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,0.5); border-radius: var(--radius-xl);
-      box-shadow: var(--glass-shadow-lg); overflow: hidden; transform: scale(0.96); transition: transform var(--transition-base);
-    }
-    .modal-overlay.show .modal-card { transform: scale(1); }
-    .modal-head { display: flex; align-items: center; gap: 10px; padding: 18px 20px; border-bottom: 1px solid rgba(0,0,0,0.08); }
-    .modal-head .material-symbols-outlined { color: rgba(99,102,241,0.8); }
-    .modal-head h3 { font-size: 16px; font-weight: 600; color: rgba(0,0,0,0.85); }
-    .modal-head .x { margin-left: auto; width: 30px; height: 30px; border: none; background: transparent; border-radius: 50%; cursor: pointer; display: grid; place-items: center; color: var(--color-text-muted); }
-    .modal-head .x:hover { background: rgba(255,255,255,0.4); }
-    .modal-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; max-height: 60vh; overflow-y: auto; }
-    .modal-foot { padding: 0 20px 18px; display: flex; gap: 8px; justify-content: flex-end; }
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    .field label { font-size: 12px; font-weight: 600; color: rgba(0,0,0,0.65); }
-    .field input, .field select {
-      background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.6); color: black;
-      padding: 9px 11px; border-radius: var(--radius-sm); font-size: 13px; outline: none; font-family: var(--font-primary);
-      transition: all var(--transition-base);
-    }
-    .field input:focus, .field select:focus { background: rgba(255,255,255,0.6); border-color: rgba(99,102,241,0.6); box-shadow: 0 0 0 3px var(--color-primary-glow); }
-    .field .hint { font-size: 11px; color: var(--color-text-subtle); }
-    .field-row { display: flex; gap: 10px; }
-    .field-row .field { flex: 1; }
-
-    /* ── Rich action-editor widgets ── */
-    .pick-btn { width: 100%; justify-content: center; }
-    .coord-row { display: flex; align-items: center; gap: 12px; }
-    .coord-row input[type=range] { flex: 1; height: 4px; accent-color: var(--color-primary); cursor: pointer; }
-    .coord-row input[type=number] { width: 82px; flex-shrink: 0; }
-    .seg { display: flex; gap: 6px; }
-    .seg-btn {
-      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-      padding: 8px 6px; border-radius: var(--radius-sm); border: 1px solid var(--glass-border);
-      background: rgba(255,255,255,0.3); color: var(--color-text-muted); cursor: pointer;
-      font-size: 12px; font-family: var(--font-primary); text-transform: capitalize;
-      transition: all var(--transition-fast);
-    }
-    .seg-btn .material-symbols-outlined { font-size: 16px; }
-    .seg-btn:hover { background: var(--glass-bg-light); }
-    .seg-btn.active { background: var(--color-primary-bg); border-color: var(--color-primary-border); color: var(--color-primary); font-weight: 600; }
-    .keyrec { display: flex; flex-direction: column; gap: 8px; }
-    .key-chips {
-      display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 38px; padding: 7px 8px;
-      border-radius: var(--radius-sm); border: 1px dashed rgba(0,0,0,0.18); background: rgba(255,255,255,0.2);
-    }
-    .key-chips .empty { font-size: 12px; color: var(--color-text-subtle); }
-    .key-chips .key-plus { color: var(--color-text-subtle); font-size: 12px; }
-    .key-cap {
-      display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 7px;
-      background: rgba(255,255,255,0.75); border: 1px solid rgba(0,0,0,0.12);
-      box-shadow: 0 2px 0 rgba(0,0,0,0.12); font-family: var(--font-mono); font-size: 12px;
-      font-weight: 600; color: rgba(0,0,0,0.75);
-    }
-    .keyrec-actions { display: flex; gap: 6px; }
-    .keyrec-btn {
-      display: inline-flex; align-items: center; gap: 5px; padding: 8px 12px; border-radius: var(--radius-sm);
-      border: 1px solid var(--glass-border); background: rgba(255,255,255,0.3); color: var(--color-text);
-      cursor: pointer; font-size: 12px; font-family: var(--font-primary); transition: all var(--transition-fast);
-    }
-    .keyrec-btn:hover { background: var(--glass-bg-light); }
-    .keyrec-btn .material-symbols-outlined { font-size: 16px; }
-    .keyrec-btn.recording { background: var(--color-danger-bg); border-color: var(--color-danger-border); color: var(--color-danger); animation: pulse 1.4s ease-in-out infinite; }
-    .motion-map { display: flex; flex-direction: column; gap: 8px; }
-    .motion-map-head, .motion-map-row { display: grid; grid-template-columns: 1fr 112px 1fr 30px; gap: 8px; align-items: center; }
-    .motion-map-head { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-subtle); padding: 0 2px; }
-    .motion-map-row input, .motion-map-row select {
-      min-width: 0; background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.6);
-      color: black; padding: 8px 9px; border-radius: var(--radius-sm); font-size: 12px; outline: none; font-family: var(--font-primary);
-    }
-    .motion-map-row select { cursor: pointer; }
-    .motion-map-del {
-      width: 30px; height: 30px; border: none; border-radius: 8px; background: transparent; color: var(--color-text-subtle);
-      cursor: pointer; display: grid; place-items: center; transition: all var(--transition-fast);
-    }
-    .motion-map-del:hover { background: var(--color-danger-bg); color: var(--color-danger); }
-    .motion-map-del .material-symbols-outlined { font-size: 16px; }
-    .motion-map-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-    .GTextBtn {
-      padding: 9px 16px; font-size: 13px; font-weight: 500; border: 1px solid var(--glass-border);
-      border-radius: var(--radius-md); background: var(--glass-bg-light); color: black; cursor: pointer;
-      transition: all var(--transition-base); display: inline-flex; align-items: center; gap: 6px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.6); font-family: var(--font-primary);
-    }
-    .GTextBtn:hover { transform: scale(1.04); }
-    .GTextBtn .material-symbols-outlined { font-size: 18px; }
-    .GTextBtn.primary { background: var(--color-primary-bg); border-color: var(--color-primary-border); color: var(--color-primary); }
-    .GTextBtn.primary:hover { background: rgba(99,102,241,0.4); }
-    .GTextBtn.ghost { background: transparent; box-shadow: none; }
-
-    /* Countdown overlay */
-    .countdown { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.3); backdrop-filter: blur(8px); color: #fff; }
-    .countdown.show { display: flex; }
-    .countdown-num { font-size: 96px; font-weight: 700; line-height: 1; }
-    .countdown-sub { font-size: 15px; opacity: 0.85; }
-
-    /* Recording banner */
-    .rec-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 55; display: none;
-      align-items: center; gap: 12px; padding: 12px 18px; border-radius: var(--radius-pill);
-      background: rgba(255,255,255,0.55); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.6);
-      box-shadow: var(--glass-shadow-lg); }
-    .rec-banner.show { display: flex; }
-    .rec-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--color-danger); animation: pulse 1.2s infinite; }
-    .rec-text { font-size: 13px; font-weight: 600; color: rgba(0,0,0,0.8); }
-    .rec-time { font-family: var(--font-mono); font-size: 13px; color: var(--color-text-muted); }
-
-    /* Toast */
-    .toast-wrap { position: fixed; top: 50px; right: 18px; z-index: 70; display: flex; flex-direction: column; gap: 8px; }
-    .toast { padding: 11px 16px; border-radius: var(--radius-md); background: rgba(255,255,255,0.6); backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.6); box-shadow: var(--glass-shadow); font-size: 13px; color: rgba(0,0,0,0.8);
-      display: flex; align-items: center; gap: 8px; animation: toastIn 0.25s ease; max-width: 320px; }
-    .toast .material-symbols-outlined { font-size: 18px; }
-    .toast.ok    { border-left: 3px solid var(--color-success); }
-    .toast.err   { border-left: 3px solid var(--color-danger); }
-    .toast.info  { border-left: 3px solid var(--color-primary); }
-    @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
-
-    /* ── Spotlight tutorial ── */
-    .tour-block { position: fixed; inset: 0; z-index: 1998; display: none; cursor: default; }
-    .tour-hole {
-      position: fixed; z-index: 1999; display: none; border-radius: var(--radius-md);
-      box-shadow: 0 0 0 9999px rgba(15,15,25,0.62); border: 2px solid rgba(99,102,241,0.95);
-      pointer-events: none; transition: all 0.32s cubic-bezier(0.4,0,0.2,1);
-    }
-    .tour-tip {
-      position: fixed; z-index: 2000; width: 312px; display: none;
-      background: rgba(255,255,255,0.9); backdrop-filter: blur(24px);
-      border: 1px solid rgba(255,255,255,0.6); border-radius: var(--radius-lg);
-      box-shadow: var(--glass-shadow-lg); padding: 16px 18px;
-      animation: tourTipIn 0.25s ease;
-    }
-    @keyframes tourTipIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
-    .tour-tip-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .tour-tip-head .material-symbols-outlined { font-size: 20px; color: var(--color-primary); }
-    .tour-tip-title { font-size: 15px; font-weight: 600; color: rgba(0,0,0,0.85); }
-    .tour-tip-body { font-size: 13px; line-height: 1.5; color: var(--color-text-muted); margin-bottom: 14px; }
-    .tour-tip-foot { display: flex; align-items: center; gap: 8px; }
-    .tour-count { font-size: 11px; color: var(--color-text-subtle); font-family: var(--font-mono); }
-    .tour-tip-btns { margin-left: auto; display: flex; gap: 6px; }
-    .tour-skip { background: transparent; border: none; color: var(--color-text-subtle); font-size: 12px; cursor: pointer; padding: 7px 8px; border-radius: 8px; font-family: var(--font-primary); }
-    .tour-skip:hover { color: var(--color-text); background: var(--glass-bg-light); }
-
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
-
-    .input-warning { margin: 0 16px; padding: 10px 14px; border-radius: var(--radius-md); display: none;
-      align-items: center; gap: 8px; font-size: 12px; background: rgba(234,179,8,0.15); border: 1px solid rgba(234,179,8,0.35); color: rgba(120,90,0,0.95); }
-    .input-warning.show { display: flex; }
-    .input-warning .material-symbols-outlined { font-size: 18px; }
-  </style>
-</head>
-<body>
-  <div class="gridOverlay"></div>
-
-  <div class="app">
-    <!-- Titlebar (Techtoby OS style: minimize · title · close) -->
-    <div class="titlebar" onmousedown="if(window.dragWindow) window.dragWindow('')">
-      <div class="tb-side">
-        <button onmousedown="event.stopPropagation()" onclick="if(window.windowMinimize) window.windowMinimize()" title="Minimize" aria-label="Minimize">
-          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-160 240-400l56-56 144 144v-488h80v488l144-144 56 56-240 240Z"/></svg>
-        </button>
-        <button id="continuousBtn" onmousedown="event.stopPropagation()" onclick="toggleContinuous()" title="Continuous Playback — loop the execution until stopped" aria-label="Continuous Playback">
-          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M280-80 120-240l160-160 56 57-63 63h287v-160h80v240H273l63 63-56 57Zm-80-440v-240h447l-63-63 56-57 160 160-160 160-56-57 63-63H280v160h-80Z"/></svg>
-        </button>
-      </div>
-      <span class="app-title">DigiTek Lab</span>
-      <div class="tb-side right">
-        <button class="close-btn" onmousedown="event.stopPropagation(); event.preventDefault();" onclick="if(window.windowClose) window.windowClose()" title="Close" aria-label="Close">
-          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Toolbar -->
-    <div class="Toolbar">
-      <div class="ToolbarGroup">
-        <button class="ToolBtn primary" id="playBtn" title="Play / Pause execution" onclick="onPlayPause()">
-          <span class="material-symbols-outlined" id="playIcon">play_arrow</span>
-        </button>
-        <button class="ToolBtn" id="stopBtn" title="Stop playback" onclick="onStop()" disabled>
-          <span class="material-symbols-outlined">stop</span>
-        </button>
-      </div>
-      <div class="ToolbarDivider"></div>
-      <div class="ToolbarGroup">
-        <button class="ToolBtn" id="recordBtn" title="Record a new macro" onclick="onRecord()">
-          <span class="material-symbols-outlined">fiber_manual_record</span> Record
-        </button>
-      </div>
-      <div class="ToolbarDivider"></div>
-      <div class="ToolbarGroup" id="fileOpsGroup">
-        <button class="ToolBtn" title="New execution" onclick="onNewExecution()"><span class="material-symbols-outlined">note_add</span></button>
-        <button class="ToolBtn" title="Save execution" onclick="onSaveExecution()"><span class="material-symbols-outlined">save</span></button>
-        <button class="ToolBtn" title="Open execution" onclick="onOpenExecution()"><span class="material-symbols-outlined">folder_open</span></button>
-        <button class="ToolBtn" title="Export execution to file" onclick="onExportExecution()"><span class="material-symbols-outlined">ios_share</span></button>
-        <button class="ToolBtn" title="Delete a saved execution" onclick="onDeleteExecution()"><span class="material-symbols-outlined">delete</span></button>
-      </div>
-      <div class="ToolbarDivider"></div>
-      <div class="toggle-wrap motion-card" onclick="openMotionSettings(event)" title="Motion Controlled settings">
-        <span class="toggle-label"><span class="material-symbols-outlined">control_camera</span>Motion Controlled</span>
-        <label class="toggle" onclick="event.stopPropagation()"><input type="checkbox" id="motionToggle" onchange="onMotionToggle()"><span class="toggle-slider"></span></label>
-      </div>
-      <div class="ToolbarDivider"></div>
-      <div class="exec-name-wrap">
-        <input class="exec-name-input" id="execName" placeholder="Execution name…" value="Untitled Execution" oninput="state.execution.name=this.value">
-      </div>
-      <div class="ToolbarDivider"></div>
-      <button class="ToolBtn" id="helpBtn" title="Show the guided tour" onclick="startTour()"><span class="material-symbols-outlined">help</span></button>
-    </div>
-
-    <div class="input-warning" id="inputWarning">
-      <span class="material-symbols-outlined">warning</span>
-      <span id="inputWarningText"></span>
-    </div>
-
-    <!-- Workspace -->
-    <div class="workspace">
-      <!-- Timeline -->
-      <div class="timeline-panel">
-        <div class="panel-head">
-          <span class="material-symbols-outlined">view_timeline</span>
-          <span class="panel-title">Timeline</span>
-          <div class="tl-legend">
-            <span class="lg"><span class="dot macro"></span>Macro</span>
-            <span class="lg"><span class="dot action"></span>Action</span>
-            <span class="lg"><span class="dot core"></span>Core</span>
-          </div>
-          <span class="panel-meta" id="timelineMeta" style="margin-left:12px;">0 items · 0.0s</span>
-        </div>
-        <div class="timeline-body">
-          <div class="tlx-toolbar">
-            <button class="tlx-zoom" onclick="zoomTimeline(-1)" title="Zoom out"><span class="material-symbols-outlined">zoom_out</span></button>
-            <span class="tlx-zoom-label" id="tlxZoomLabel">90 px/s</span>
-            <button class="tlx-zoom" onclick="zoomTimeline(1)" title="Zoom in"><span class="material-symbols-outlined">zoom_in</span></button>
-            <div style="flex:1"></div>
-            <button class="tlx-zoom tlx-addlayer" onclick="addLayer()" title="Add a parallel layer"><span class="material-symbols-outlined">add</span>Add layer</button>
-          </div>
-          <div class="tlx-scroll" id="tlxScroll">
-            <div class="tlx-ruler" id="tlxRuler"></div>
-            <div class="tlx-lanes" id="tlxLanes"
-                 ondragover="onLanesDragOver(event)" ondragleave="onLanesDragLeave(event)" ondrop="onLanesDrop(event)">
-              <div class="tlx-playhead" id="tlxPlayhead"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Action List -->
-      <div class="actionlist-panel">
-        <div class="panel-head">
-          <span class="material-symbols-outlined">add_box</span>
-          <span class="panel-title">Action List</span>
-          <button class="al-mini" title="Import macro from file" onclick="onImportMacro()"><span class="material-symbols-outlined">upload_file</span></button>
-        </div>
-        <div class="actionlist-body" id="actionListBody"></div>
-      </div>
-    </div>
-
-    <!-- Status bar -->
-    <div class="statusbar">
-      <span class="status-item" id="statusMsg"><span class="material-symbols-outlined">check_circle</span>Ready</span>
-      <span class="status-item" id="continuousStatus" style="display:none;"><span class="material-symbols-outlined">repeat</span>Continuous playback</span>
-      <span class="statusbar-spacer"></span>
-      <span class="status-item sb-hotkeys" id="hotkeyHint"></span>
-    </div>
-  </div>
-
-  <!-- Param / name modal -->
-  <div class="modal-overlay" id="modal">
-    <div class="modal-card">
-      <div class="modal-head">
-        <span class="material-symbols-outlined" id="modalIcon">tune</span>
-        <h3 id="modalTitle">Configure</h3>
-        <button class="x" onclick="closeAppModal()"><span class="material-symbols-outlined">close</span></button>
-      </div>
-      <div class="modal-body" id="modalBody"></div>
-      <div class="modal-foot">
-        <button class="GTextBtn ghost" onclick="closeAppModal()">Cancel</button>
-        <button class="GTextBtn primary" id="modalOk" onclick="onModalOk()">Add</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Countdown -->
-  <div class="countdown" id="countdown">
-    <div class="countdown-num" id="countdownNum">3</div>
-    <div class="countdown-sub" id="countdownSub">Switch to Roblox…</div>
-  </div>
-
-  <!-- Recording banner -->
-  <div class="rec-banner" id="recBanner">
-    <span class="rec-dot"></span>
-    <span class="rec-text">Recording</span>
-    <span class="rec-time" id="recTime">0.0s</span>
-    <button class="GTextBtn" onclick="finishRecording()"><span class="material-symbols-outlined">stop</span>Stop</button>
-  </div>
-
-  <div class="toast-wrap" id="toastWrap"></div>
-
-  <!-- Spotlight tutorial -->
-  <div class="tour-block" id="tourBlock"></div>
-  <div class="tour-hole" id="tourHole"></div>
-  <div class="tour-tip" id="tourTip">
-    <div class="tour-tip-head">
-      <span class="material-symbols-outlined" id="tourIcon">tips_and_updates</span>
-      <span class="tour-tip-title" id="tourTitle"></span>
-    </div>
-    <div class="tour-tip-body" id="tourBody"></div>
-    <div class="tour-tip-foot">
-      <span class="tour-count" id="tourCount"></span>
-      <div class="tour-tip-btns">
-        <button class="tour-skip" id="tourSkip" onclick="endTour(true)">Skip</button>
-        <button class="GTextBtn ghost" id="tourBack" onclick="prevTourStep()">Back</button>
-        <button class="GTextBtn primary" id="tourNext" onclick="nextTourStep()">Next</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-  /* ───────────────────────── Bridge ───────────────────────── */
+/* ───────────────────────── Bridge ───────────────────────── */
   function bridge(payload) {
     if (!window.invokeBridge) return Promise.reject(new Error('Backend bridge not available.'));
     return window.invokeBridge(payload).then(r => {
@@ -739,6 +77,11 @@
     fov:       { icon:'zoom_in', label:'FOV Preset', desc:'Zoom out to max, then in to a point',
       def:{ targetNotches:6 },
       fields:[ {k:'targetNotches',label:'Zoom-in notches',type:'number',hint:'Scroll-in steps after zooming fully out'} ] },
+    controlleraxis: { icon:'sports_esports', label:'Controller Axis', desc:'Hold an Xbox stick or trigger',
+      def:{ part:'left_stick', fromX:0, fromY:0, toX:0, toY:0.35, fromValue:0, toValue:0.5 }, editor:'controllerAxis',
+      fields:[ {k:'part',label:'Axis',type:'text'}, {k:'fromX',label:'Initial X',type:'number'}, {k:'fromY',label:'Initial Y',type:'number'},
+               {k:'toX',label:'Target X',type:'number'}, {k:'toY',label:'Target Y',type:'number'},
+               {k:'fromValue',label:'Initial Pull',type:'number'}, {k:'toValue',label:'Target Pull',type:'number'} ] },
     wait:      { icon:'hourglass_empty', label:'Wait', desc:'Pause for a duration',
       def:{ ms:500 },
       fields:[ {k:'ms',label:'Duration (ms)',type:'number'} ] },
@@ -760,6 +103,7 @@
         def: Object.assign({}, t.defaults || {}),
         fields: t.fields || [],
         pick: t.pick || null,
+        editor: t.editor || null,
         order: t.order ?? 999,
       };
     });
@@ -774,6 +118,7 @@
       case 'keypress': return (+p.holdMs || 0) / 1000 + 0.05;
       case 'keycombo': return (+p.holdMs || 0) / 1000 + 0.05;
       case 'mousedrag': return (+p.durationMs || 0) / 1000;
+      case 'controlleraxis': return 1.0;
       case 'mouseclick': return 0.06 * (+p.count || 1);
       case 'scroll': return Math.abs(+p.amount || 0) * 0.012;
       case 'fov': return (18 + (+p.targetNotches || 0)) * 0.012 + 0.05;
@@ -782,9 +127,9 @@
   }
 
   // Multi-track timeline config + selection.
-  const TL = { pxPerSec: 90, laneH: 64, clipH: 52, minLen: 0.1, minView: 6, layers: 1, defaultDur: 1.0 };
+  const TL = { pxPerSec: 90, laneH: 48, clipH: 40, minLen: 0.1, minView: 6, layers: 1, defaultDur: 1.0, snap: true, dragGhost: null, draggingId: null };
   // Actions whose playback length is the clip length (no in-modal hold/duration).
-  const HELD_ACTIONS = ['keypress', 'keycombo', 'mousedrag', 'wait'];
+  const HELD_ACTIONS = ['keypress', 'keycombo', 'mousedrag', 'controlleraxis', 'wait'];
   const isHeldItem = (it) => it.kind === 'action' && HELD_ACTIONS.includes(it.actionType);
   let selectedClipId = null;
 
@@ -798,8 +143,40 @@
     const d = +item.duration;
     return Math.max(TL.minLen, d > 0 ? d : intrinsicDuration(item));
   }
-  // Snap a time (s) to a light grid for tidy editing.
-  function snap(t) { return Math.round(t / 0.05) * 0.05; }
+  // Snap a time (s) to a light grid for tidy editing (no-op when snapping is off).
+  function snap(t) { return TL.snap ? Math.round(t / 0.05) * 0.05 : t; }
+
+  // Snap-to-other-clips: returns the nearest start/end edge of any other clip (or 0)
+  // within a small pixel threshold, else the original value.
+  const SNAP_PX = 7;
+  function snapToClips(value, excludeId) {
+    if (!TL.snap) return { t: value, snapped: false, raw: value };
+    const thr = SNAP_PX / TL.pxPerSec;
+    let best = value, bestD = thr, snapped = false;
+    const consider = (t) => { const d = Math.abs(value - t); if (d <= bestD) { bestD = d; best = t; snapped = true; } };
+    consider(0);
+    state.execution.timeline.forEach(it => {
+      if (it.id === excludeId) return;
+      const s = it.start || 0;
+      consider(s);
+      consider(s + clipDuration(it));
+    });
+    return { t: snapped ? best : snap(value), snapped, raw: best };
+  }
+
+  // A dashed guide line at a snapped time (or hidden when time is null). Re-added each
+  // frame because renderTimeline() rebuilds the lanes.
+  function showSnapGuide(time) {
+    const lanes = document.getElementById('tlxLanes');
+    const existing = document.getElementById('tlxSnap');
+    if (existing) existing.remove();
+    if (time == null || !lanes) return;
+    const g = document.createElement('div');
+    g.id = 'tlxSnap';
+    g.className = 'tlx-snapline';
+    g.style.left = (time * TL.pxPerSec) + 'px';
+    lanes.appendChild(g);
+  }
   // End time of the last clip on a layer (for append-on-click).
   function layerEnd(L) {
     let end = 0;
@@ -846,10 +223,24 @@
   }
   function addLayer() { TL.layers++; renderTimeline(); }
 
+  // Snapping on/off toggle (timeline header button).
+  function toggleSnap() {
+    TL.snap = !TL.snap;
+    const b = document.getElementById('snapBtn');
+    if (b) {
+      b.classList.toggle('active', TL.snap);
+      b.title = TL.snap ? 'Snapping on — click to disable' : 'Snapping off — click to enable';
+      const ico = b.querySelector('.material-symbols-outlined');
+      if (ico) ico.textContent = TL.snap ? 'grid_on' : 'grid_off';
+    }
+    toast('info', TL.snap ? 'Snapping enabled.' : 'Snapping disabled.');
+  }
+
   function renderTimeline() {
     migrateTimeline();
     const lanes = document.getElementById('tlxLanes');
     const ruler = document.getElementById('tlxRuler');
+    const heads = document.getElementById('tlxHeadsInner');
     if (!lanes || !ruler) return;
     const tl = state.execution.timeline;
     const px = TL.pxPerSec;
@@ -859,11 +250,14 @@
     tl.forEach(it => { maxLayer = Math.max(maxLayer, it.layer || 0); });
     const laneCount = Math.max(TL.layers, maxLayer + 1, 1) + (tl.length ? 1 : 1);
 
-    // Total time + content width.
+    // Total time + content width. The timeline always fills the full panel width;
+    // when content is longer than the view it grows past it and scrolls.
     let total = 0;
     tl.forEach(it => { total = Math.max(total, (it.start || 0) + clipDuration(it)); });
+    const scroll = document.getElementById('tlxScroll');
+    const minW = scroll ? scroll.clientWidth : 0;
     const viewSec = Math.max(total + 1.5, TL.minView);
-    const width = Math.round(viewSec * px) + 20;
+    const width = Math.max(minW, Math.round(viewSec * px) + 20);
 
     // Ruler.
     ruler.style.width = width + 'px';
@@ -875,6 +269,21 @@
       tick.style.left = (s * px) + 'px';
       tick.textContent = fmtTime(s);
       ruler.appendChild(tick);
+    }
+
+    // Track-head column (one "Layer" row + circle toggle per lane).
+    if (heads) {
+      heads.innerHTML = '';
+      for (let L = 0; L < laneCount; L++) {
+        const h = document.createElement('div');
+        h.className = 'tlx-head';
+        h.style.height = TL.laneH + 'px';
+        h.innerHTML = `<span class="tlx-head-label">Layer</span>
+          <button class="tlx-head-toggle" title="Enable / mute layer"
+            onclick="this.classList.toggle('on');this.querySelector('.material-symbols-outlined').textContent=this.classList.contains('on')?'radio_button_unchecked':'radio_button_checked'">
+            <span class="material-symbols-outlined">radio_button_unchecked</span></button>`;
+        heads.appendChild(h);
+      }
     }
 
     // Lanes container — keep the playhead element, rebuild everything else.
@@ -889,19 +298,7 @@
       lane.className = 'tlx-lane';
       lane.style.top = (L * TL.laneH) + 'px';
       lane.style.height = TL.laneH + 'px';
-      lane.innerHTML = `<span class="tlx-lane-label">L${L + 1}</span>`;
       lanes.appendChild(lane);
-    }
-
-    if (!tl.length) {
-      const es = document.createElement('div');
-      es.className = 'empty-state';
-      es.style.cssText = 'position:absolute;inset:0;height:100%;';
-      es.innerHTML = `
-        <span class="material-symbols-outlined empty-state-icon">movie_filter</span>
-        <div class="empty-state-title">Your timeline is empty</div>
-        <div class="empty-state-desc">Click or drag macros and actions from the Action List onto a layer to build your shot.</div>`;
-      lanes.appendChild(es);
     }
 
     // Clips.
@@ -911,7 +308,7 @@
       const w = Math.max(20, dur * px);
       const top = (item.layer || 0) * TL.laneH + (TL.laneH - TL.clipH) / 2;
       const el = document.createElement('div');
-      el.className = 'tlx-clip kind-' + item.kind + (item.id === selectedClipId ? ' selected' : '');
+      el.className = 'tlx-clip kind-' + item.kind + (item.id === selectedClipId ? ' selected' : '') + (item.id === TL.draggingId ? ' dragging' : '');
       el.style.left = left + 'px';
       el.style.top = top + 'px';
       el.style.width = w + 'px';
@@ -924,47 +321,195 @@
       el.innerHTML = `
         <div class="tlx-handle l"></div><div class="tlx-handle r"></div>
         <button class="tlx-clip-x" title="Remove"><span class="material-symbols-outlined">close</span></button>
+        <button class="tlx-clip-rename" title="Rename"><span class="material-symbols-outlined">edit</span></button>
         <div class="tlx-clip-name"><span class="material-symbols-outlined" style="font-size:13px;vertical-align:-2px;">${icon}</span> ${escapeHtml(item.name)}</div>
         <div class="tlx-clip-sub">${fmtTime(item.start || 0)} · ${dur.toFixed(2)}s${(item.trimStart || 0) > 0 ? ' ✂' : ''}</div>
         <div class="tlx-clip-content" style="width:${Math.round(contentSec * px)}px;"></div>`;
       attachClipHandlers(el, item);
       lanes.appendChild(el);
     });
+    renderTimelineGhost(lanes);
 
     document.getElementById('timelineMeta').textContent =
-      `${tl.length} clip${tl.length === 1 ? '' : 's'} · ${Math.max(laneCount - 1, 1)} layer${(laneCount - 1) === 1 ? '' : 's'} · ${fmtTime(total)}`;
-    document.getElementById('tlxZoomLabel').textContent = px + ' px/s';
+      `${tl.length} clip${tl.length === 1 ? '' : 's'}`;
+    document.getElementById('tlxZoomLabel').textContent = Math.round(px / 90 * 100) + '%';
+    if (!state.playing) updateTimecode(selectedClipId ? (tl.find(c => c.id === selectedClipId)?.start || 0) : 0);
     if (state.playing) positionPlayhead(state._elapsed || 0);
+    syncTimelineScroll();
+  }
+
+  // ── Timecode display (MM:SS:CS) ──
+  function updateTimecode(sec) {
+    const el = document.getElementById('timecode');
+    if (!el) return;
+    sec = Math.max(0, sec || 0);
+    const m = Math.floor(sec / 60), s = Math.floor(sec % 60), cs = Math.floor((sec * 100) % 100);
+    const p = (n) => String(n).padStart(2, '0');
+    el.textContent = `${p(m)}:${p(s)}:${p(cs)}`;
+  }
+
+  // ── Keep track-head column (vertical) and ruler (horizontal) aligned with the lanes scroll ──
+  function syncTimelineScroll() {
+    const scroll = document.getElementById('tlxScroll');
+    const headsInner = document.getElementById('tlxHeadsInner');
+    const ruler = document.getElementById('tlxRuler');
+    if (!scroll) return;
+    if (headsInner) headsInner.style.transform = `translateY(${-scroll.scrollTop}px)`;
+    if (ruler) ruler.style.transform = `translateX(${-scroll.scrollLeft}px)`;
+  }
+
+  // ── Select the previous/next/first/last clip and bring it into view ──
+  function focusAdjacentClip(where) {
+    const tl = [...state.execution.timeline].sort((a, b) => (a.start || 0) - (b.start || 0));
+    if (!tl.length) return;
+    let idx = tl.findIndex(c => c.id === selectedClipId);
+    if (where === 'start') idx = 0;
+    else if (where === 'end') idx = tl.length - 1;
+    else if (where === 'prev') idx = idx < 0 ? 0 : Math.max(0, idx - 1);
+    else if (where === 'next') idx = idx < 0 ? 0 : Math.min(tl.length - 1, idx + 1);
+    const item = tl[idx];
+    selectedClipId = item.id;
+    renderTimeline();
+    const scroll = document.getElementById('tlxScroll');
+    if (scroll) {
+      const left = (item.start || 0) * TL.pxPerSec;
+      if (left < scroll.scrollLeft || left > scroll.scrollLeft + scroll.clientWidth - 80) {
+        scroll.scrollLeft = Math.max(0, left - 40);
+      }
+    }
+  }
+
+  // ── Delete the currently selected clip (toolbar trash button) ──
+  function deleteSelectedClip() {
+    if (!selectedClipId) return toast('info', 'Select a clip first, then delete it.');
+    removeClip(selectedClipId);
+  }
+
+  /* ── Undo / redo (timeline snapshots) ── */
+  const HIST = { past: [], future: [], max: 60 };
+  function snapshot() { return JSON.stringify({ tl: state.execution.timeline, layers: TL.layers }); }
+  function recordHistory(snap) {
+    HIST.past.push(snap);
+    if (HIST.past.length > HIST.max) HIST.past.shift();
+    HIST.future.length = 0;
+    refreshUndoButtons();
+  }
+  function pushHistory() { recordHistory(snapshot()); }
+  function applySnapshot(snap) {
+    const data = JSON.parse(snap);
+    state.execution.timeline = data.tl;
+    TL.layers = data.layers || 1;
+    selectedClipId = null;
+    renderTimeline();
+  }
+  function undo() {
+    if (!HIST.past.length) return;
+    HIST.future.push(snapshot());
+    applySnapshot(HIST.past.pop());
+    refreshUndoButtons();
+  }
+  function redo() {
+    if (!HIST.future.length) return;
+    HIST.past.push(snapshot());
+    applySnapshot(HIST.future.pop());
+    refreshUndoButtons();
+  }
+  function refreshUndoButtons() {
+    const u = document.getElementById('undoBtn'), r = document.getElementById('redoBtn');
+    if (u) u.disabled = !HIST.past.length;
+    if (r) r.disabled = !HIST.future.length;
   }
 
   /* ── Clip interactions ── */
   function attachClipHandlers(el, item) {
     el.querySelector('.tlx-clip-x').onclick = (e) => { e.stopPropagation(); removeClip(item.id); };
+    el.querySelector('.tlx-clip-rename').onclick = (e) => { e.stopPropagation(); renameClip(item); };
     el.querySelector('.tlx-handle.l').addEventListener('pointerdown', (e) => startResize(e, item, 'l'));
     el.querySelector('.tlx-handle.r').addEventListener('pointerdown', (e) => startResize(e, item, 'r'));
     el.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('.tlx-handle') || e.target.closest('.tlx-clip-x')) return;
+      if (e.target.closest('.tlx-handle') || e.target.closest('.tlx-clip-x') || e.target.closest('.tlx-clip-rename')) return;
       startMove(e, item);
     });
+  }
+
+  function renderTimelineGhost(lanes) {
+    if (!lanes) lanes = document.getElementById('tlxLanes');
+    if (!lanes) return;
+    lanes.querySelectorAll('.tlx-drag-ghost').forEach(el => el.remove());
+    const g = TL.dragGhost;
+    if (!g) return;
+    const el = document.createElement('div');
+    const dur = Math.max(TL.minLen, +g.duration || TL.defaultDur);
+    const start = Math.max(0, +g.start || 0);
+    const layer = Math.max(0, +g.layer || 0);
+    const kind = g.kind || 'macro';
+    el.className = 'tlx-drag-ghost kind-' + kind;
+    el.style.left = (start * TL.pxPerSec) + 'px';
+    el.style.top = (layer * TL.laneH + (TL.laneH - TL.clipH) / 2) + 'px';
+    el.style.width = Math.max(20, dur * TL.pxPerSec) + 'px';
+    el.innerHTML = `<div class="tlx-drag-ghost-name">${escapeHtml(g.name || 'Clip')}</div>
+      <div class="tlx-drag-ghost-sub">${fmtTime(start)} · ${dur.toFixed(2)}s</div>`;
+    lanes.appendChild(el);
+  }
+
+  function clearTimelineDragGhost() {
+    TL.dragGhost = null;
+    TL.draggingId = null;
+    const lanes = document.getElementById('tlxLanes');
+    if (lanes) {
+      lanes.classList.remove('dragover');
+      lanes.querySelectorAll('.tlx-drag-ghost').forEach(el => el.remove());
+    }
+  }
+
+  async function renameClip(item) {
+    const name = await nativePrompt({
+      title: 'Rename clip', tbLabel: 'Rename', message: 'Enter a new name for this clip:',
+      placeholder: 'Clip name', default: item.name, confirmLabel: 'Rename',
+    });
+    if (name === null) return;
+    pushHistory();
+    item.name = name || item.name;
+    renderTimeline();
   }
 
   function startMove(e, item) {
     e.preventDefault();
     const startX = e.clientX, startY = e.clientY;
     const origStart = item.start || 0, origLayer = item.layer || 0;
+    const before = snapshot();
     let moved = false;
+    const dur = clipDuration(item);
+    TL.draggingId = item.id;
+    TL.dragGhost = { kind:item.kind, name:item.name, start:origStart, layer:origLayer, duration:dur };
     const onMove = (ev) => {
       const dx = ev.clientX - startX, dy = ev.clientY - startY;
       if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
-      item.start = Math.max(0, snap(origStart + dx / TL.pxPerSec));
+      const ns = Math.max(0, origStart + dx / TL.pxPerSec);
+      // Snap whichever edge (start or end) is closer to another clip's edge.
+      const snS = snapToClips(ns, item.id);
+      const snE = snapToClips(ns + dur, item.id);
+      let guide = null;
+      if (snS.snapped && (!snE.snapped || Math.abs(ns - snS.t) <= Math.abs((ns + dur) - snE.t))) {
+        item.start = Math.max(0, snS.t); guide = snS.t;
+      } else if (snE.snapped) {
+        item.start = Math.max(0, snE.t - dur); guide = snE.t;
+      } else {
+        item.start = snS.t;   // light grid snap
+      }
       item.layer = Math.max(0, origLayer + Math.round(dy / TL.laneH));
+      TL.dragGhost = { kind:item.kind, name:item.name, start:item.start || 0, layer:item.layer || 0, duration:dur };
       renderTimeline();
+      showSnapGuide(guide);
     };
     const onUp = () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
+      showSnapGuide(null);
+      TL.dragGhost = null;
+      TL.draggingId = null;
       if (!moved) selectClip(item);
-      else { TL.layers = Math.max(TL.layers, (item.layer || 0) + 1); renderTimeline(); }
+      else { recordHistory(before); TL.layers = Math.max(TL.layers, (item.layer || 0) + 1); renderTimeline(); }
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
@@ -974,25 +519,37 @@
     e.preventDefault(); e.stopPropagation();
     selectedClipId = item.id;
     const startX = e.clientX;
+    const before = snapshot();
+    let changed = false;
     const o = { start: item.start || 0, duration: clipDuration(item), trim: item.trimStart || 0 };
     const onMove = (ev) => {
       const dt = (ev.clientX - startX) / TL.pxPerSec;
+      if (Math.abs(dt) > 1e-3) changed = true;
+      let guide = null;
       if (side === 'r') {
-        item.duration = Math.max(TL.minLen, snap(o.duration + dt));   // trim/hold the tail
+        // The dragged edge is the clip END; snap it to other clips' edges.
+        const sn = snapToClips(o.start + o.duration + dt, item.id);
+        item.duration = Math.max(TL.minLen, sn.t - o.start);
+        guide = sn.snapped ? sn.t : null;
       } else {
-        // Head trim: move start + in-point together; never expose before content, keep min length.
-        let delta = snap(dt);
+        // The dragged edge is the clip START; snap it, then clamp the head trim.
+        const sn = snapToClips(o.start + dt, item.id);
+        let delta = sn.t - o.start;
         delta = Math.max(delta, -o.trim, -o.start);
         delta = Math.min(delta, o.duration - TL.minLen);
         item.start = o.start + delta;
         item.trimStart = o.trim + delta;
         item.duration = o.duration - delta;
+        guide = (sn.snapped && Math.abs(item.start - sn.t) < 1e-6) ? sn.t : null;
       }
       renderTimeline();
+      showSnapGuide(guide);
     };
     const onUp = () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
+      showSnapGuide(null);
+      if (changed) recordHistory(before);
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
@@ -1008,7 +565,7 @@
     const a = ACTIONS[item.actionType];
     if (!a) return;
     openParamModal({
-      title: 'Edit ' + a.label, icon: a.icon, okLabel: 'Save', fields: a.fields, pick: a.pick,
+      title: 'Edit ' + a.label, icon: a.icon, okLabel: 'Save', fields: a.fields, pick: a.pick, editor: a.editor,
       values: paramsToForm(item.actionType, item.params),
       onOk: (vals) => { item.params = coerceParams(item.actionType, vals); item.intrinsic = estimateActionDuration(item.actionType, item.params); renderTimeline(); },
     });
@@ -1016,7 +573,9 @@
 
   function removeClip(id) {
     const i = state.execution.timeline.findIndex(it => it.id === id);
-    if (i >= 0) state.execution.timeline.splice(i, 1);
+    if (i < 0) return;
+    pushHistory();
+    state.execution.timeline.splice(i, 1);
     if (selectedClipId === id) selectedClipId = null;
     renderTimeline();
   }
@@ -1102,7 +661,7 @@
     // Open the param editor for a new action before inserting.
     const a = ACTIONS[type];
     openParamModal({
-      title: a.label, icon: a.icon, okLabel: 'Add', fields: a.fields, pick: a.pick,
+      title: a.label, icon: a.icon, okLabel: 'Add', fields: a.fields, pick: a.pick, editor: a.editor,
       values: Object.assign({}, a.def),
       onOk: (vals) => {
         const params = coerceParams(type, vals);
@@ -1112,6 +671,7 @@
   }
 
   function insertClip(item, pos) {
+    pushHistory();
     if (pos && typeof pos.start === 'number') { item.layer = Math.max(0, pos.layer || 0); item.start = Math.max(0, pos.start); }
     else { item.layer = 0; item.start = layerEnd(0); }
     item.duration = TL.defaultDur;          // every new clip defaults to 1 second
@@ -1130,6 +690,7 @@
   }
   // Convert form values → typed params
   function coerceParams(type, vals) {
+    if (type === 'controlleraxis') return normalizeControllerAxisParams(vals);
     const a = ACTIONS[type];
     const out = {};
     a.fields.forEach(f => {
@@ -1141,9 +702,55 @@
     return out;
   }
 
+  /* ── Inline Controller Axis Editor ── */
+  const AXIS_PARTS = {
+    left_stick:  { label:'Left Stick',    icon:'sports_esports',     axes:[0,1], kind:'stick'   },
+    right_stick: { label:'Right Stick',   icon:'sports_esports',     axes:[2,3], kind:'stick'   },
+    left_trigger:  { label:'Left Trigger',  icon:'vertical_align_bottom', button:6, axis:6, kind:'trigger' },
+    right_trigger: { label:'Right Trigger', icon:'vertical_align_bottom', button:7, axis:7, kind:'trigger' },
+  };
+
+  function normalizeControllerAxisParams(vals) {
+    vals = vals || {};
+    const part = ['left_stick','right_stick','left_trigger','right_trigger'].includes(vals.part) ? vals.part : 'left_stick';
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, Number.isFinite(+n) ? +n : 0));
+    return {
+      part,
+      fromX: clamp(vals.fromX, -1, 1),
+      fromY: clamp(vals.fromY, -1, 1),
+      toX: clamp(vals.toX ?? vals.x, -1, 1),
+      toY: clamp(vals.toY ?? vals.y, -1, 1),
+      fromValue: clamp(vals.fromValue, 0, 1),
+      toValue: clamp(vals.toValue ?? vals.value, 0, 1),
+    };
+  }
+
   /* ───────────────────────── Drop from the Action List onto a lane ───────────────────────── */
-  function onLanesDragOver(e) { e.preventDefault(); document.getElementById('tlxLanes').classList.add('dragover'); }
-  function onLanesDragLeave(e) { document.getElementById('tlxLanes').classList.remove('dragover'); }
+  function ghostFromDragData(d, layer, start) {
+    if (!d) return null;
+    if (d.source === 'action') {
+      const a = ACTIONS[d.actionType] || {};
+      return { kind:'action', name:a.label || 'Action', duration:TL.defaultDur, layer, start };
+    }
+    return { kind:d.source === 'core' ? 'core' : 'macro', name:d.name || 'Macro', duration:TL.defaultDur, layer, start };
+  }
+
+  function onLanesDragOver(e) {
+    e.preventDefault();
+    const lanes = document.getElementById('tlxLanes');
+    if (!lanes) return;
+    lanes.classList.add('dragover');
+    const rect = lanes.getBoundingClientRect();
+    const layer = Math.max(0, Math.floor((e.clientY - rect.top) / TL.laneH));
+    const start = Math.max(0, snap((e.clientX - rect.left) / TL.pxPerSec));
+    TL.dragGhost = ghostFromDragData(state.dragData, layer, start);
+    renderTimelineGhost(lanes);
+  }
+  function onLanesDragLeave(e) {
+    const lanes = document.getElementById('tlxLanes');
+    if (lanes && e.relatedTarget && lanes.contains(e.relatedTarget)) return;
+    clearTimelineDragGhost();
+  }
   function onLanesDrop(e) {
     e.preventDefault();
     const lanes = document.getElementById('tlxLanes');
@@ -1153,6 +760,7 @@
     const start = Math.max(0, snap((e.clientX - rect.left) / TL.pxPerSec));
     const pos = { layer, start };
     const d = state.dragData; state.dragData = null;
+    clearTimelineDragGhost();
     if (!d) return;
     if (d.source === 'action') addAction(d.actionType, pos);
     else if (d.source === 'macro') addMacro({ ref:d.ref, name:d.name, duration:d.duration }, pos);
@@ -1162,11 +770,18 @@
   /* ───────────────────────── Param modal ───────────────────────── */
   function openParamModal(ctx) {
     state.modalCtx = ctx;
+    document.querySelector('#modal .modal-card')?.classList.toggle('wide', ctx.editor === 'controllerAxis');
     document.getElementById('modalTitle').textContent = ctx.title;
     document.getElementById('modalIcon').textContent = ctx.icon || 'tune';
     document.getElementById('modalOk').textContent = ctx.okLabel || 'OK';
     const body = document.getElementById('modalBody');
     body.innerHTML = '';
+
+    if (ctx.editor === 'controllerAxis') {
+      renderControllerAxisEditor(ctx.values || {});
+      document.getElementById('modal').classList.add('show');
+      return;
+    }
 
     // "Pick on screen" shortcut for actions with coordinates.
     if (ctx.pick) {
@@ -1371,16 +986,389 @@
       }
     });
   }
+
+  function timelineNeedsControllerSupport() {
+    return (state.execution.timeline || []).some(it => it.kind === 'action' && it.actionType === 'controlleraxis');
+  }
+
+  function controllerSupportAvailable() {
+    return !!(state.appInfo && state.appInfo.controllerAvailable);
+  }
+
+  async function refreshControllerSupportStatus() {
+    try {
+      const st = await bridge({ action:'dgt_controller_support_status' });
+      state.appInfo = Object.assign({}, state.appInfo || {}, st);
+      renderControllerSupportRow();
+      return st;
+    } catch (e) {
+      return state.appInfo || {};
+    }
+  }
+
+  function controllerSupportPromptMessage(verb) {
+    return `${verb || 'Reinstall'} Controller Axis support?\n\n` +
+      `DigiTek Lab needs two pieces for Controller Axis playback:\n\n` +
+      `vgamepad: a Python package that lets DigiTek Lab create and control a virtual Xbox controller.\n\n` +
+      `ViGEmBus: a Windows driver from Nefarius that exposes that virtual controller to games like a real USB gamepad.\n\n` +
+      `After this is installed, Windows may play the same sound it uses when a USB device connects whenever DigiTek Lab opens. That is normal: the virtual controller driver is creating a controller device for games to see.\n\n` +
+      `Windows may show a driver installer or administrator prompt.`;
+  }
+
+  async function reinstallControllerSupportFlow() {
+    const ok = await nativeConfirm({
+      title:'Reinstall Controller Support',
+      tbLabel:'Controller Support',
+      message: controllerSupportPromptMessage('Reinstall'),
+      confirmLabel:'Reinstall drivers',
+    });
+    if (!ok) return false;
+    return await runControllerSupportJob('reinstall');
+  }
+
+  async function installControllerSupportFlow() {
+    return await reinstallControllerSupportFlow();
+  }
+
+  async function uninstallControllerSupportFlow(options) {
+    options = options || {};
+    if (!options.skipConfirm) {
+      const ok = await nativeConfirm({
+        title:'Uninstall Controller Support',
+        tbLabel:'Controller Support',
+        message:'This will remove the vgamepad Python package and ask Windows to uninstall the ViGEmBus virtual gamepad driver. Other apps that use ViGEmBus may stop creating virtual controllers until it is installed again.',
+        confirmLabel:'Uninstall',
+        danger:true,
+      });
+      if (!ok) return false;
+    }
+    await runControllerSupportJob('uninstall');
+    return true;
+  }
+
+  function showControllerSupportProgress(kind) {
+    document.getElementById('supportOverlay').classList.add('show');
+    document.getElementById('supportCloseBtn').style.display = 'none';
+    const logPanel = document.getElementById('supportLogPanel');
+    const logToggle = document.getElementById('supportLogToggle');
+    logPanel.classList.remove('show');
+    logPanel.textContent = 'Waiting for installer output...';
+    logToggle.classList.remove('active');
+    logToggle.title = 'Show installer log';
+    logToggle.setAttribute('aria-label', 'Show installer log');
+    document.getElementById('supportIcon').textContent = kind === 'uninstall' ? 'delete' : 'download';
+    document.getElementById('supportTitle').textContent = kind === 'uninstall' ? 'Removing controller support' : (kind === 'reinstall' ? 'Reinstalling controller support' : 'Setting up controller support');
+    document.getElementById('supportSub').textContent = kind === 'uninstall'
+      ? 'DigiTek Lab is removing vgamepad and the ViGEmBus virtual controller driver.'
+      : (kind === 'reinstall'
+        ? 'DigiTek Lab is reinstalling vgamepad and checking the ViGEmBus virtual controller driver.'
+        : 'DigiTek Lab is installing vgamepad and checking the ViGEmBus virtual controller driver.');
+    updateControllerSupportProgress({ progress:0, phase:'Starting', message:'Starting...', detail:'' });
+  }
+
+  function hideControllerSupportProgress() {
+    document.getElementById('supportOverlay').classList.remove('show');
+    document.getElementById('supportLogPanel').classList.remove('show');
+    document.getElementById('supportLogToggle').classList.remove('active');
+  }
+
+  function toggleControllerSupportLog() {
+    const panel = document.getElementById('supportLogPanel');
+    const toggle = document.getElementById('supportLogToggle');
+    const visible = panel.classList.toggle('show');
+    toggle.classList.toggle('active', visible);
+    toggle.title = visible ? 'Hide installer log' : 'Show installer log';
+    toggle.setAttribute('aria-label', toggle.title);
+    if (visible) panel.scrollTop = panel.scrollHeight;
+  }
+
+  function updateControllerSupportProgress(st) {
+    const pct = Math.max(0, Math.min(100, Math.round(st.progress || 0)));
+    document.getElementById('supportProgressFill').style.width = pct + '%';
+    document.getElementById('supportPercent').textContent = pct + '%';
+    document.getElementById('supportPhase').textContent = st.phase || 'Working';
+    const detail = st.detail || st.message || 'Working...';
+    document.getElementById('supportDetail').textContent = detail;
+    const logPanel = document.getElementById('supportLogPanel');
+    const logLines = Array.isArray(st.log) ? st.log : [];
+    logPanel.textContent = logLines.length ? logLines.join('\n') : 'Waiting for installer output...';
+    if (logPanel.classList.contains('show')) logPanel.scrollTop = logPanel.scrollHeight;
+    if (st.message) setStatus(st.message, st.kind === 'uninstall' ? 'delete' : 'download');
+  }
+
+  async function runControllerSupportJob(kind) {
+    showControllerSupportProgress(kind);
+    try {
+      await bridge({ action:'dgt_controller_support_job_start', kind });
+      while (true) {
+        const st = await bridge({ action:'dgt_controller_support_job_status' });
+        updateControllerSupportProgress(st);
+        if (st.done || !st.running) {
+          state.appInfo = Object.assign({}, state.appInfo || {}, {
+            controllerAvailable: !!st.controllerAvailable,
+            controllerError: st.controllerError || st.error,
+          });
+          renderControllerSupportRow();
+          document.getElementById('supportCloseBtn').style.display = '';
+          setStatus('Ready', 'check_circle');
+          if ((kind === 'install' || kind === 'reinstall') && st.controllerAvailable) {
+            toast('ok', 'Controller Axis support is ready.');
+            setTimeout(hideControllerSupportProgress, 900);
+            return true;
+          }
+          if (kind === 'uninstall' && st.ok) {
+            toast('ok', 'Controller support uninstall finished.');
+            return true;
+          }
+          toast('err', st.error || st.controllerError || 'Controller support setup did not complete.');
+          return false;
+        }
+        await new Promise(r => setTimeout(r, 350));
+      }
+    } catch (e) {
+      document.getElementById('supportCloseBtn').style.display = '';
+      setStatus('Ready', 'check_circle');
+      toast('err', e.message);
+      return false;
+    }
+  }
+
+  function renderControllerSupportRow() {
+    const row = document.getElementById('axisSupportRow');
+    if (!row) return;
+    const ready = controllerSupportAvailable();
+    row.innerHTML = ready
+      ? `<span>Controller support ready.</span><button type="button" onclick="reinstallControllerSupportFlow()">Reinstall drivers</button><button type="button" class="danger" onclick="uninstallControllerSupportFlow()">Uninstall drivers</button>`
+      : `<span>Controller support missing.</span><button type="button" onclick="reinstallControllerSupportFlow()">Reinstall drivers</button><button type="button" class="danger" onclick="uninstallControllerSupportFlow()">Uninstall drivers</button>`;
+  }
+
+  function renderControllerAxisEditor(values) {
+    state.axisComponentValue = normalizeControllerAxisParams(values);
+    const body = document.getElementById('modalBody');
+    body.innerHTML =
+      `<div class="axis-editor">
+        <div class="axis-controller" aria-label="Controller axis picker">
+          <button type="button" class="axis-control-item" data-axis-part="left_stick"><span class="axis-control-glyph"><span class="material-symbols-outlined">sports_esports</span></span><span class="axis-control-main"><span class="axis-control-name">Left Stick</span><span class="axis-control-desc">Analog movement axis</span></span><span class="axis-control-side"><span class="axis-control-icon stick" data-axis-icon="left_stick"></span></span></button>
+          <button type="button" class="axis-control-item" data-axis-part="right_stick"><span class="axis-control-glyph"><span class="material-symbols-outlined">sports_esports</span></span><span class="axis-control-main"><span class="axis-control-name">Right Stick</span><span class="axis-control-desc">Analog camera/look axis</span></span><span class="axis-control-side"><span class="axis-control-icon stick" data-axis-icon="right_stick"></span></span></button>
+          <button type="button" class="axis-control-item" data-axis-part="left_trigger"><span class="axis-control-glyph"><span class="material-symbols-outlined">vertical_align_bottom</span></span><span class="axis-control-main"><span class="axis-control-name">Left Trigger</span><span class="axis-control-desc">Analog pull amount</span></span><span class="axis-control-side"><span class="axis-control-icon trigger" data-axis-icon="left_trigger"></span></span></button>
+          <button type="button" class="axis-control-item" data-axis-part="right_trigger"><span class="axis-control-glyph"><span class="material-symbols-outlined">vertical_align_bottom</span></span><span class="axis-control-main"><span class="axis-control-name">Right Trigger</span><span class="axis-control-desc">Analog pull amount</span></span><span class="axis-control-side"><span class="axis-control-icon trigger" data-axis-icon="right_trigger"></span></span></button>
+        </div>
+        <div class="axis-panel">
+          <div class="axis-panel-head"><span class="material-symbols-outlined" id="axis-part-icon">sports_esports</span><span id="axis-part-title">Left Stick</span></div>
+          <div class="axis-point-tabs">
+            <button type="button" class="axis-point-tab" id="axis-initial-tab"><span class="axis-dot"></span>Initial</button>
+            <button type="button" class="axis-point-tab" id="axis-target-tab"><span class="axis-dot target"></span>Target</button>
+          </div>
+          <div id="axis-stick-tools">
+            <div class="axis-stick-pad" id="axis-stick-pad"><div class="axis-stick-path" id="axis-stick-path"></div><div class="axis-stick-ghost" id="axis-stick-ghost"></div><div class="axis-stick-thumb" id="axis-stick-thumb"></div></div>
+            <div class="axis-slider-row"><span>X</span><input type="range" min="-1" max="1" step="0.01" id="axis-x-range"><input type="number" min="-1" max="1" step="0.01" id="axis-x-num"></div>
+            <div class="axis-slider-row"><span>Y</span><input type="range" min="-1" max="1" step="0.01" id="axis-y-range"><input type="number" min="-1" max="1" step="0.01" id="axis-y-num"></div>
+          </div>
+          <div id="axis-trigger-tools" style="display:none">
+            <div class="axis-trigger-press" id="axis-trigger-press"><div class="axis-trigger-cap" id="axis-trigger-cap"></div></div>
+            <div class="axis-slider-row"><span>Pull</span><input type="range" min="0" max="1" step="0.01" id="axis-value-range"><input type="number" min="0" max="1" step="0.01" id="axis-value-num"></div>
+          </div>
+          <div class="axis-record-row"><button type="button" class="GTextBtn primary" id="axis-record-btn"><span class="material-symbols-outlined">fiber_manual_record</span>Record controller</button><button type="button" class="GTextBtn ghost" id="axis-center-btn"><span class="material-symbols-outlined">restart_alt</span>Center</button></div>
+          <div class="axis-readout" id="axis-readout"></div>
+          <div class="axis-support-row" id="axisSupportRow"></div>
+        </div>
+      </div>`;
+    axisEdInit(state.axisComponentValue);
+  }
+
+  function axisEdInit(params) {
+    state.axisEdParams = normalizeControllerAxisParams(params);
+    state.axisEdEditPoint = 'target';
+    const $id = id => document.getElementById(id);
+    document.querySelectorAll('[data-axis-part]').forEach(btn =>
+      btn.addEventListener('click', () => axisEdSelectPart(btn.dataset.axisPart)));
+    $id('axis-initial-tab').addEventListener('click', () => axisEdSetEditPoint('initial'));
+    $id('axis-target-tab').addEventListener('click', () => axisEdSetEditPoint('target'));
+    $id('axis-x-range').addEventListener('input', e => axisEdSetComponent('x', e.target.value));
+    $id('axis-x-num').addEventListener('input', e => axisEdSetComponent('x', e.target.value));
+    $id('axis-y-range').addEventListener('input', e => axisEdSetComponent('y', e.target.value));
+    $id('axis-y-num').addEventListener('input', e => axisEdSetComponent('y', e.target.value));
+    $id('axis-value-range').addEventListener('input', e => axisEdSetComponent('value', e.target.value));
+    $id('axis-value-num').addEventListener('input', e => axisEdSetComponent('value', e.target.value));
+    $id('axis-stick-pad').addEventListener('pointerdown', axisEdStartStickDrag);
+    $id('axis-trigger-press').addEventListener('pointerdown', axisEdStartTriggerDrag);
+    $id('axis-center-btn').addEventListener('click', axisEdResetValue);
+    $id('axis-record-btn').addEventListener('click', axisEdToggleRecord);
+    axisEdUpdateUi();
+    renderControllerSupportRow();
+  }
+
+  function axisEdSelectPart(part) {
+    if (!AXIS_PARTS[part]) return;
+    state.axisEdParams.part = part;
+    state.axisComponentValue = normalizeControllerAxisParams(state.axisEdParams);
+    axisEdUpdateUi();
+  }
+
+  function axisEdSetEditPoint(point) {
+    state.axisEdEditPoint = point === 'initial' ? 'initial' : 'target';
+    axisEdUpdateUi();
+  }
+
+  function axisEdPatch(values) {
+    state.axisEdParams = normalizeControllerAxisParams(Object.assign({}, state.axisEdParams, values));
+    state.axisComponentValue = state.axisEdParams;
+    axisEdUpdateUi();
+  }
+
+  function axisEdActiveValues() {
+    const p = state.axisEdParams;
+    return state.axisEdEditPoint === 'initial'
+      ? { x: p.fromX, y: p.fromY, value: p.fromValue }
+      : { x: p.toX,   y: p.toY,   value: p.toValue   };
+  }
+
+  function axisEdSetComponent(name, raw) {
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, Number.isFinite(+n) ? +n : 0));
+    const value = clamp(raw, name === 'value' ? 0 : -1, 1);
+    if (state.axisEdEditPoint === 'initial') {
+      if (name === 'x') state.axisEdParams.fromX = value;
+      if (name === 'y') state.axisEdParams.fromY = value;
+      if (name === 'value') state.axisEdParams.fromValue = value;
+    } else {
+      if (name === 'x') state.axisEdParams.toX = value;
+      if (name === 'y') state.axisEdParams.toY = value;
+      if (name === 'value') state.axisEdParams.toValue = value;
+    }
+    state.axisComponentValue = normalizeControllerAxisParams(state.axisEdParams);
+    axisEdUpdateUi();
+  }
+
+  function axisEdUpdateUi() {
+    const p = state.axisEdParams;
+    if (!p) return;
+    const $id = id => document.getElementById(id);
+    const part = AXIS_PARTS[p.part] || AXIS_PARTS.left_stick;
+    document.querySelectorAll('[data-axis-part]').forEach(b =>
+      b.classList.toggle('active', b.dataset.axisPart === p.part));
+    const titleEl = $id('axis-part-title'); if (titleEl) titleEl.textContent = part.label;
+    const iconEl  = $id('axis-part-icon');  if (iconEl)  iconEl.textContent  = part.icon;
+    const stickTools = $id('axis-stick-tools');   if (stickTools) stickTools.style.display   = part.kind === 'stick'   ? '' : 'none';
+    const trigTools  = $id('axis-trigger-tools'); if (trigTools)  trigTools.style.display    = part.kind === 'trigger' ? '' : 'none';
+    const initTab = $id('axis-initial-tab'); if (initTab) initTab.classList.toggle('active', state.axisEdEditPoint === 'initial');
+    const tgtTab  = $id('axis-target-tab');  if (tgtTab)  tgtTab.classList.toggle('active',  state.axisEdEditPoint !== 'initial');
+    const a = axisEdActiveValues();
+    const xRange = $id('axis-x-range');     if (xRange)   xRange.value   = a.x;
+    const xNum   = $id('axis-x-num');       if (xNum)     xNum.value     = a.x.toFixed(2);
+    const yRange = $id('axis-y-range');     if (yRange)   yRange.value   = a.y;
+    const yNum   = $id('axis-y-num');       if (yNum)     yNum.value     = a.y.toFixed(2);
+    const valRange = $id('axis-value-range'); if (valRange) valRange.value = a.value;
+    const valNum   = $id('axis-value-num');   if (valNum)   valNum.value   = a.value.toFixed(2);
+    const sx = p.fromX * 59, sy = p.fromY * 59, tx = p.toX * 59, ty = p.toY * 59;
+    const ghost = $id('axis-stick-ghost');
+    if (ghost) { ghost.style.transform = `translate(${sx}px,${sy}px)`; ghost.style.opacity = state.axisEdEditPoint === 'initial' ? '1' : '.58'; }
+    const thumb = $id('axis-stick-thumb');
+    if (thumb) { thumb.style.transform = `translate(${tx}px,${ty}px)`; thumb.style.opacity = state.axisEdEditPoint === 'initial' ? '.72' : '1'; }
+    const dx = tx - sx, dy = ty - sy;
+    const path = $id('axis-stick-path');
+    if (path) { path.style.transform = `translate(${sx}px,${sy}px) rotate(${Math.atan2(dy,dx)}rad)`; path.style.width = Math.hypot(dx,dy) + 'px'; }
+    document.querySelectorAll('.axis-control-icon.stick').forEach(el => { el.style.setProperty('--stick-to-x','0px'); el.style.setProperty('--stick-to-y','0px'); });
+    document.querySelectorAll('.axis-control-icon.trigger').forEach(el => el.style.setProperty('--trigger-to','0'));
+    const icon = document.querySelector(`[data-axis-icon="${p.part}"]`);
+    if (icon && part.kind === 'stick')   { icon.style.setProperty('--stick-to-x',(p.toX*7)+'px'); icon.style.setProperty('--stick-to-y',(p.toY*7)+'px'); }
+    if (icon && part.kind === 'trigger')   icon.style.setProperty('--trigger-to', p.toValue);
+    const tp = $id('axis-trigger-press');
+    if (tp) { tp.style.setProperty('--from', p.fromValue); tp.style.setProperty('--to', p.toValue); tp.style.setProperty('--cap', a.value); }
+    const readout = $id('axis-readout');
+    if (readout) readout.textContent = part.kind === 'stick'
+      ? `${part.label}  ${state.axisEdEditPoint === 'initial' ? 'Initial' : 'Target'} X ${a.x.toFixed(2)}  Y ${a.y.toFixed(2)}`
+      : `${part.label}  ${state.axisEdEditPoint === 'initial' ? 'Initial' : 'Target'} pull ${a.value.toFixed(2)}`;
+  }
+
+  function axisEdStartStickDrag(e) {
+    e.preventDefault();
+    const pad = document.getElementById('axis-stick-pad');
+    pad.setPointerCapture(e.pointerId);
+    const move = ev => {
+      const r = pad.getBoundingClientRect();
+      const cx = r.left + r.width/2, cy = r.top + r.height/2, max = r.width/2;
+      let x = (ev.clientX - cx)/max, y = (ev.clientY - cy)/max;
+      const len = Math.hypot(x, y); if (len > 1) { x /= len; y /= len; }
+      axisEdPatch(state.axisEdEditPoint === 'initial' ? {fromX:x,fromY:y} : {toX:x,toY:y});
+    };
+    const up = () => { pad.removeEventListener('pointermove',move); pad.removeEventListener('pointerup',up); pad.removeEventListener('pointercancel',up); };
+    pad.addEventListener('pointermove', move); pad.addEventListener('pointerup', up); pad.addEventListener('pointercancel', up);
+    move(e);
+  }
+
+  function axisEdStartTriggerDrag(e) {
+    e.preventDefault();
+    const press = document.getElementById('axis-trigger-press');
+    press.setPointerCapture(e.pointerId);
+    const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+    const move = ev => {
+      const r = press.getBoundingClientRect();
+      axisEdPatch(state.axisEdEditPoint === 'initial'
+        ? { fromValue: clamp(1 - ((ev.clientY - r.top) / r.height), 0, 1) }
+        : { toValue:   clamp(1 - ((ev.clientY - r.top) / r.height), 0, 1) });
+    };
+    const up = () => { press.removeEventListener('pointermove',move); press.removeEventListener('pointerup',up); press.removeEventListener('pointercancel',up); };
+    press.addEventListener('pointermove', move); press.addEventListener('pointerup', up); press.addEventListener('pointercancel', up);
+    move(e);
+  }
+
+  function axisEdResetValue() {
+    axisEdPatch(state.axisEdEditPoint === 'initial' ? {fromX:0,fromY:0,fromValue:0} : {toX:0,toY:0,toValue:0});
+  }
+
+  function axisEdToggleRecord() {
+    const btn = document.getElementById('axis-record-btn');
+    if (state.axisRecTimer) {
+      clearInterval(state.axisRecTimer); state.axisRecTimer = null;
+      btn.classList.remove('recording');
+      btn.innerHTML = '<span class="material-symbols-outlined">fiber_manual_record</span>Record controller';
+      return;
+    }
+    if (!navigator.getGamepads) { toast('err', 'Gamepad recording is not available in this browser.'); return; }
+    btn.classList.add('recording');
+    btn.innerHTML = '<span class="material-symbols-outlined">stop</span>Stop recording';
+    state.axisRecTimer = setInterval(() => {
+      const gp = Array.from(navigator.getGamepads()).find(Boolean);
+      const readout = document.getElementById('axis-readout');
+      if (!gp) { if (readout) readout.textContent = 'Connect or move a controller to record.'; return; }
+      const part = AXIS_PARTS[state.axisEdParams.part];
+      if (part.kind === 'stick') {
+        const x = gp.axes[part.axes[0]] || 0, y = gp.axes[part.axes[1]] || 0;
+        axisEdPatch(state.axisEdEditPoint === 'initial'
+          ? { fromX: Math.abs(x)<.03?0:x, fromY: Math.abs(y)<.03?0:y }
+          : { toX:   Math.abs(x)<.03?0:x, toY:   Math.abs(y)<.03?0:y });
+      } else {
+        const fromButton = gp.buttons[part.button] ? gp.buttons[part.button].value : 0;
+        const fromAxis   = typeof gp.axes[part.axis] === 'number' ? (gp.axes[part.axis]+1)/2 : 0;
+        axisEdPatch(state.axisEdEditPoint === 'initial'
+          ? { fromValue: Math.max(fromButton, fromAxis) }
+          : { toValue:   Math.max(fromButton, fromAxis) });
+      }
+    }, 80);
+  }
+
+  function getControllerAxisParamsFromEditor() {
+    return normalizeControllerAxisParams(state.axisComponentValue || {});
+  }
+
+
+
   function onModalOk() {
     const ctx = state.modalCtx;
     if (!ctx) return closeAppModal();
     if (ctx.motionSettings) return saveMotionSettings();
-    const vals = {};
-    (ctx.fields || []).forEach(f => { vals[f.k] = document.getElementById('f_' + f.k).value; });
+    let vals = {};
+    if (ctx.editor === 'controllerAxis') vals = getControllerAxisParamsFromEditor();
+    else (ctx.fields || []).forEach(f => { vals[f.k] = document.getElementById('f_' + f.k).value; });
     closeAppModal();
     if (ctx.onOk) ctx.onOk(vals);
   }
-  function closeAppModal() { document.getElementById('modal').classList.remove('show'); state.modalCtx = null; }
+  function closeAppModal() {
+    if (state.axisRecTimer) { clearInterval(state.axisRecTimer); state.axisRecTimer = null; }
+    document.querySelector('#modal .modal-card')?.classList.remove('wide');
+    document.getElementById('modal').classList.remove('show');
+    state.modalCtx = null;
+  }
 
   // Simple text prompt built on the same modal
   function promptModal(title, label, value, okLabel) {
@@ -1418,6 +1406,7 @@
     if (event) event.stopPropagation();
     ensureMotionKeyMap();
     state.modalCtx = { motionSettings:true };
+    document.querySelector('#modal .modal-card')?.classList.remove('wide');
     document.getElementById('modalTitle').textContent = 'Motion Controlled';
     document.getElementById('modalIcon').textContent = 'control_camera';
     document.getElementById('modalOk').textContent = 'Save';
@@ -1520,7 +1509,7 @@
       state.recording = true;
       state.recordMotion = state.execution.motionControlled;
       document.getElementById('recordBtn').classList.add('recording');
-      document.getElementById('recordBtn').innerHTML = '<span class="material-symbols-outlined">stop</span> Stop';
+      document.getElementById('recordBtn').innerHTML = '<span class="material-symbols-outlined">stop</span>';
       document.getElementById('recBanner').classList.add('show');
       setStatus('Recording…', 'fiber_manual_record');
       startRecPolling();
@@ -1544,7 +1533,7 @@
     state.recording = false;
     document.getElementById('recBanner').classList.remove('show');
     document.getElementById('recordBtn').classList.remove('recording');
-    document.getElementById('recordBtn').innerHTML = '<span class="material-symbols-outlined">fiber_manual_record</span> Record';
+    document.getElementById('recordBtn').innerHTML = '<span class="material-symbols-outlined">fiber_manual_record</span>';
     setStatus('Ready', 'check_circle');
     let result;
     try { result = await bridge({ action:'dgt_record_stop' }); }
@@ -1590,6 +1579,13 @@
     }
     if (!state.execution.timeline.length) { toast('info', 'Add some items to the timeline first.'); return; }
     if (state.appInfo && !state.appInfo.inputAvailable) { toast('err', state.appInfo.inputError || 'Input unavailable'); return; }
+    if (timelineNeedsControllerSupport()) {
+      const st = await refreshControllerSupportStatus();
+      if (!st.controllerAvailable) {
+        const installed = await installControllerSupportFlow();
+        if (!installed) return;
+      }
+    }
     await runCountdown('Switch to Roblox…');
     try {
       state.stopRequested = false; state.restarting = false;
@@ -1597,7 +1593,8 @@
       state.playing = true; state.paused = false;
       setPlayIcon('pause');
       setStatus(state.continuous ? 'Playing (continuous)…' : 'Playing…', 'play_arrow');
-      document.getElementById('stopBtn').disabled = false;
+      document.getElementById('playBtn')?.classList.add('busy');
+      document.getElementById('titlePlayBtn')?.classList.add('busy');
       positionPlayhead(0);
       startPlayPolling();
     } catch (e) { toast('err', e.message); }
@@ -1645,6 +1642,7 @@
 
   function positionPlayhead(elapsed) {
     state._elapsed = elapsed;
+    updateTimecode(elapsed);
     const ph = document.getElementById('tlxPlayhead');
     if (!ph) return;
     ph.style.left = (elapsed * TL.pxPerSec) + 'px';
@@ -1665,41 +1663,67 @@
     state.playing = false; state.paused = false; state.restarting = false; state._elapsed = 0;
     setPlayIcon('play_arrow');
     setStatus('Ready', 'check_circle');
-    document.getElementById('stopBtn').disabled = true;
+    document.getElementById('playBtn')?.classList.remove('busy');
+    document.getElementById('titlePlayBtn')?.classList.remove('busy');
+    updateTimecode(0);
     document.querySelectorAll('.tlx-clip.playing').forEach(el => el.classList.remove('playing'));
     setTimeout(() => { const ph = document.getElementById('tlxPlayhead'); if (ph) { ph.classList.remove('show'); ph.style.left = '0px'; } }, 500);
   }
 
-  function setPlayIcon(name) { document.getElementById('playIcon').textContent = name; }
-
-  // Bottom status-bar message.
-  function setStatus(text, icon) {
-    const el = document.getElementById('statusMsg');
-    if (el) el.innerHTML = `<span class="material-symbols-outlined">${icon || 'check_circle'}</span>${escapeHtml(text)}`;
+  function setPlayIcon(name) {
+    document.getElementById('playIcon').textContent = name;
+    const titleIcon = document.getElementById('titlePlayIcon');
+    if (titleIcon) titleIcon.textContent = name;
   }
 
-  // Continuous Playback toggle (titlebar).
+  // Titlebar status pill — update the value text + colour the dot for the current state.
+  function setStatus(text, icon) {
+    const el = document.getElementById('statusMsg');
+    if (el) el.textContent = text;
+    const dot = document.getElementById('statusDot');
+    if (dot) {
+      const danger = icon === 'fiber_manual_record' || icon === 'delete';
+      const busy = icon === 'play_arrow' || icon === 'pause' || icon === 'fast_rewind' || icon === 'download';
+      dot.style.background = danger ? 'var(--color-danger)' : busy ? 'var(--accent-color)' : 'var(--color-success)';
+    }
+  }
+
+  // Continuous Playback toggle.
   function toggleContinuous() {
     state.continuous = !state.continuous;
-    document.getElementById('continuousBtn').classList.toggle('active', state.continuous);
+    document.getElementById('continuousBtn')?.classList.toggle('active', state.continuous);
     document.getElementById('continuousStatus').style.display = state.continuous ? 'flex' : 'none';
     toast('info', state.continuous ? 'Continuous playback on — loops until you stop.' : 'Continuous playback off.');
     if (state.playing && !state.paused) setStatus(state.continuous ? 'Playing (continuous)…' : 'Playing…', 'play_arrow');
   }
 
   /* ───────────────────────── Execution save / load / export ───────────────────────── */
+  // Reflect the current execution name in the status bar (replaces the old toolbar input).
+  function setExecNameLabel(name) {
+    const el = document.getElementById('execNameLabel');
+    if (el) el.textContent = name || 'Untitled Execution';
+  }
+  // Keep the Motion Controlled toolbar button's pressed state in sync with the checkbox.
+  function syncMotionBtn() {
+    const cb = document.getElementById('motionToggle');
+    document.getElementById('motionBtn')?.classList.toggle('active', !!(cb && cb.checked));
+  }
   function onMotionToggle() {
-    state.execution.motionControlled = document.getElementById('motionToggle').checked;
+    const cb = document.getElementById('motionToggle');
+    cb.checked = !cb.checked;            // invoked from the toolbar button
+    syncMotionBtn();
+    state.execution.motionControlled = cb.checked;
     if (state.execution.motionControlled)
-      toast('info', 'Motion Control on — when the execution finishes it plays backward, retracing the camera to its starting position so you can film a clean plate of the same move.');
+      toast('info', 'Motion Control on — when the execution finishes it plays backward, retracing the camera and any controller axis inputs to their starting positions so you can film a clean plate of the same move.');
     else
       toast('info', 'Motion Control off — the camera stays where the execution ends.');
   }
 
   function onNewExecution() {
     state.execution = { format:'dgtexec', schema:1, name:'Untitled Execution', motionControlled:false, motionKeyMap:defaultMotionKeyMap(), timeline:[] };
-    document.getElementById('execName').value = state.execution.name;
+    setExecNameLabel(state.execution.name);
     document.getElementById('motionToggle').checked = false;
+    syncMotionBtn();
     TL.layers = 1; selectedClipId = null;
     render();
     toast('info', 'New execution started.');
@@ -1714,7 +1738,7 @@
     });
     if (name === null) return;
     state.execution.name = name || 'Untitled Execution';
-    document.getElementById('execName').value = state.execution.name;
+    setExecNameLabel(state.execution.name);
     try {
       const r = await bridge({ action:'dgt_save_execution', name: state.execution.name, data: state.execution });
       state.execution.ref = r.ref;
@@ -1769,8 +1793,9 @@
     ensureMotionKeyMap();
     TL.layers = 1; selectedClipId = null;
     migrateTimeline();                       // give legacy items clip fields + size layers
-    document.getElementById('execName').value = state.execution.name || 'Untitled Execution';
+    setExecNameLabel(state.execution.name || 'Untitled Execution');
     document.getElementById('motionToggle').checked = !!state.execution.motionControlled;
+    syncMotionBtn();
     render();
   }
 
@@ -1827,8 +1852,8 @@
       body:'Capture your own keyboard/mouse moves into a reusable macro. A countdown lets you switch to Roblox first; press F8 in-game to stop recording.' },
     { sel:'#fileOpsGroup', icon:'folder_open', title:'Manage executions',
       body:'Start a new shot, then save, open, or export your execution to a file to share or reuse it later.' },
-    { sel:'#motionToggle', icon:'control_camera', title:'Motion control',
-      body:'When on, the execution plays backward once it finishes — retracing the camera to its starting position so you can re-run the exact same move, e.g. to film a clean plate.' },
+    { sel:'#menuSettingsBtn', icon:'control_camera', title:'Motion control',
+      body:'Open Settings to toggle Motion Control. When on, the execution plays backward once it finishes — retracing the camera and any controller axis inputs to their starting positions so you can re-run the exact same move, e.g. to film a clean plate.' },
     { sel:'#tlxScroll', icon:'view_timeline', title:'The timeline',
       body:'A multi-track timeline that plays left → right. Drop clips onto layers to run them in parallel, drag a clip to move it in time or to another layer, and drag its edges to trim or extend its duration.' },
     { sel:'#actionListBody', icon:'add_box', title:'Action list',
@@ -1895,7 +1920,7 @@
   }
 
   // Keep the spotlight aligned if the window resizes mid-tour.
-  window.addEventListener('resize', () => { if (tour.active) showTourStep(); });
+  window.addEventListener('resize', () => { if (tour.active) showTourStep(); renderTimeline(); });
 
   function maybeStartFirstRunTour() {
     let done = false;
@@ -1905,6 +1930,8 @@
 
   /* ───────────────────────── Boot ───────────────────────── */
   async function boot() {
+    setExecNameLabel(state.execution.name);
+    syncMotionBtn();
     render();
     // appInfo may need a moment while the Python backend warms up.
     for (let i = 0; i < 25; i++) {
@@ -1926,18 +1953,41 @@
     maybeStartFirstRunTour();
   }
 
+  // Keep the track-head column and ruler aligned while scrolling the lanes.
+  document.getElementById('tlxScroll')?.addEventListener('scroll', syncTimelineScroll);
+
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { if (tour.active) endTour(false); else closeAppModal(); return; }
+    const tag = (e.target.tagName || '').toLowerCase();
+    const typing = tag === 'input' || tag === 'textarea' || tag === 'select';
+    // Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z) → undo / redo.
+    if (e.ctrlKey && !typing && (e.key === 'z' || e.key === 'Z' || e.key === 'y' || e.key === 'Y')) {
+      e.preventDefault();
+      if (e.key === 'y' || e.key === 'Y' || e.shiftKey) redo(); else undo();
+      return;
+    }
+    // Ctrl + / Ctrl - → zoom the timeline.
+    if (e.ctrlKey && (e.key === '=' || e.key === '+' || e.key === '-' || e.key === '_')) {
+      if (typing) return;
+      e.preventDefault();
+      zoomTimeline((e.key === '-' || e.key === '_') ? -1 : 1);
+      return;
+    }
     // Delete the selected clip — ignore while typing or a modal is open.
     if (e.key === 'Delete' && selectedClipId) {
-      const tag = (e.target.tagName || '').toLowerCase();
       const modalOpen = document.getElementById('modal').classList.contains('show');
-      if (!modalOpen && tag !== 'input' && tag !== 'textarea' && tag !== 'select') {
-        e.preventDefault(); removeClip(selectedClipId);
-      }
+      if (!modalOpen && !typing) { e.preventDefault(); removeClip(selectedClipId); }
     }
   });
+
+  // Ctrl + mouse wheel over the timeline → zoom in/out.
+  (function () {
+    const sc = document.getElementById('tlxScroll');
+    if (sc) sc.addEventListener('wheel', (e) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      zoomTimeline(e.deltaY < 0 ? 1 : -1);
+    }, { passive: false });
+  })();
+
   window.addEventListener('DOMContentLoaded', boot);
-  </script>
-</body>
-</html>
