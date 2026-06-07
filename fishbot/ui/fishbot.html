@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fishbot 3.0</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    body { font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; color: #202020; background: #f3f3f3; }
+    button, input, select { font: inherit; }
+    .app { width: 385px; height: 536px; display: grid; grid-template-rows: 1fr 30px 40px; background: #f3f3f3; }
+    .tabs { display: grid; grid-template-rows: 34px 1fr; min-height: 0; }
+    .tabbar { display: flex; align-items: end; padding: 5px 5px 0; gap: 2px; background: #ececec; border-bottom: 1px solid #bdbdbd; }
+    .tabbtn { border: 1px solid #bdbdbd; border-bottom: 0; background: #dfdfdf; padding: 6px 10px; min-width: 64px; cursor: pointer; border-radius: 3px 3px 0 0; }
+    .tabbtn.active { background: #fff; position: relative; top: 1px; }
+    .tabbtn:disabled { color: #888; cursor: default; }
+    .tabcontent { min-height: 0; overflow: hidden; background: #fff; }
+    .tab { display: none; height: 100%; overflow: auto; padding: 10px; }
+    .tab.active { display: block; }
+    h2 { margin: 0 0 3px; font-size: 16px; font-weight: 400; }
+    p { margin: 0 0 8px; font-size: 11px; line-height: 1.35; }
+    .group { padding: 5px 5px 10px; }
+    .sep { height: 1px; background: #d0d0d0; margin: 6px 0; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 5px; }
+    .row { display: grid; grid-template-columns: 82px 1fr 35px; gap: 5px; align-items: center; padding: 5px; }
+    .formrow { display: grid; grid-template-columns: 130px 1fr; gap: 8px; align-items: center; padding: 4px 0; }
+    input, select { min-width: 0; height: 25px; border: 1px solid #b7b7b7; border-radius: 2px; background: #fff; padding: 2px 6px; }
+    input[type=range] { padding: 0; height: 22px; }
+    input[type=checkbox] { width: auto; height: auto; }
+    button { min-height: 26px; border: 1px solid #adadad; border-radius: 2px; background: linear-gradient(#fff, #e7e7e7); padding: 4px 9px; cursor: pointer; }
+    button:hover:not(:disabled) { background: linear-gradient(#fff, #dcdcdc); }
+    button:disabled { color: #888; cursor: default; }
+    .widebtn { width: 100%; }
+    .check { display: flex; align-items: center; gap: 6px; padding: 3px 5px; }
+    .tips { min-height: 34px; display: flex; align-items: start; justify-content: center; color: #888; font-size: 10px; text-align: center; cursor: pointer; padding: 5px; }
+    .accordion { border: 1px solid #cfcfcf; }
+    .acc-head { width: 100%; text-align: left; border: 0; border-bottom: 1px solid #cfcfcf; border-radius: 0; background: #eee; }
+    .acc-body { display: none; padding: 8px; border-bottom: 1px solid #cfcfcf; }
+    .acc-body.open { display: block; }
+    .income { color: #009400; text-align: center; font-size: 34px; padding-top: 8px; }
+    .subincome { text-align: center; padding: 2px 0; }
+    .status { margin: 4px; border: 1px solid lightgray; background: #fff; padding: 5px 7px; color: #333; }
+    .footer { display: flex; gap: 5px; align-items: end; padding: 5px; background: #f3f3f3; }
+    .spacer { flex: 1; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="tabs">
+      <div class="tabbar">
+        <button class="tabbtn active" onclick="showTab('general', this)">General</button>
+        <button class="tabbtn" onclick="showTab('detection', this)">Detection</button>
+        <button class="tabbtn" onclick="showTab('timerTab', this)">Timer</button>
+        <button class="tabbtn" onclick="showTab('misc', this)">Misc</button>
+      </div>
+      <div class="tabcontent">
+        <section id="general" class="tab active">
+          <div class="group">
+            <h2>Screenshot Region</h2>
+            <p>Adjust the numbers or click on "Select Region" to setup an area for the bot to look at.</p>
+            <div class="grid2">
+              <input id="bbox0" type="number" placeholder="Left">
+              <input id="bbox1" type="number" placeholder="Right">
+              <input id="bbox2" type="number" placeholder="Top">
+              <input id="bbox3" type="number" placeholder="Bottom">
+            </div>
+          </div>
+          <div class="group">
+            <h2>Click Location</h2>
+            <p>Set the location where Fishbot clicks when the bobber is detected underwater.</p>
+            <div class="grid2">
+              <input id="click0" type="number" placeholder="Click (X)">
+              <input id="click1" type="number" placeholder="Click (Y)">
+            </div>
+          </div>
+          <div class="grid2">
+            <button id="regionBtn" class="widebtn" onclick="pickRegion()">Select Region</button>
+            <button id="clickBtn" class="widebtn" onclick="pickClick()">Select Click Location</button>
+          </div>
+          <div class="tips" onclick="randomTip()" id="tipsGeneral">Click me to learn some tips and tricks</div>
+        </section>
+
+        <section id="detection" class="tab">
+          <div class="group">
+            <h2>Detection Parameters</h2>
+            <p>Adjust the slider to control the bot vision.</p>
+            <div class="row">
+              <span>Magic Slider</span>
+              <input id="magicValue" type="range" min="0" max="255" oninput="magicLabel.textContent=this.value">
+              <span id="magicLabel">N/A</span>
+            </div>
+          </div>
+          <div class="sep"></div>
+          <div class="group">
+            <h2>Basic Settings</h2>
+            <label class="check"><input id="showOverlay" type="checkbox"> Show Overlay</label>
+            <label class="check"><input id="startPaused" type="checkbox"> Start Paused</label>
+          </div>
+          <div class="sep"></div>
+          <div class="group">
+            <h2>Humanization</h2>
+            <p>Set a catch failure rate and choose how it changes over time.</p>
+            <div class="row">
+              <span>Failure Rate</span>
+              <input id="failingRange" type="range" min="0" max="100" oninput="failingMultiplier.value=this.value">
+              <input id="failingMultiplier" type="number" min="0" max="100" oninput="failingRange.value=this.value">
+            </div>
+            <div class="formrow">
+              <span>Failure Pattern</span>
+              <select id="failingPattern"><option>Random</option><option>Getting tired</option><option>Improve over time</option></select>
+            </div>
+          </div>
+        </section>
+
+        <section id="timerTab" class="tab">
+          <div class="group">
+            <h2>Timer</h2>
+            <label class="check"><input id="timer" type="checkbox"> Enabled</label>
+            <div class="formrow"><span>Duration</span><input id="timerDuration" type="number" min="1" max="360"></div>
+            <div class="formrow"><span>Unit</span><select id="timerUnit"><option>seconds</option><option>minutes</option><option>hours</option></select></div>
+          </div>
+        </section>
+
+        <section id="misc" class="tab">
+          <div class="accordion">
+            <button class="acc-head" onclick="toggleAcc('budget')">Budget Planner</button>
+            <div class="acc-body open" id="budget">
+              <div class="formrow"><span>Overall Working Level</span><input id="overallLevel" type="number" min="1" max="10" value="1"></div>
+              <div class="formrow"><span>Fisherman Level</span><input id="fishermanLevel" type="number" min="1" max="10" value="1"></div>
+              <label class="check"><input id="excellentEmployee" type="checkbox"> Excellent Employee</label>
+              <div class="grid2">
+                <button onclick="calculateBudget()">Calculate Income</button>
+                <button onclick="clearBudget()">Clear</button>
+              </div>
+              <div class="income" id="income">$0.00</div>
+              <div class="subincome" id="bonus">Excellent Employee +$0.00</div>
+              <div class="subincome" id="expense">Humanization -$0.00</div>
+              <div class="tips" onclick="randomTip()" id="tipsMisc">Tips &amp; Tricks</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <input id="status" class="status" readonly value="Welcome on Fishbot V3.0, made by @dummtoby on Roblox">
+
+    <div class="footer">
+      <button id="startBtn" onclick="startBot()">Start</button>
+      <button id="stopBtn" onclick="stopBot()" disabled>Stop</button>
+      <span class="spacer"></span>
+      <button onclick="saveAndQuit()">Save &amp; Quit</button>
+    </div>
+  </div>
+
+  <script>
+    const tips = [
+      'Job levels now go to 10; level 10 pays like the old level 50.',
+      'Higher job levels increase the estimated income.',
+      'Excellent Employee game pass increases income by 50%.',
+      'The perfect W/B percentage for catching is 0.1% or below.',
+      'Adjusting the magic value can improve detection accuracy.'
+    ];
+    let settings = {};
+    let pollTimer = null;
+    let liveTimer = null;
+    let starting = false;
+
+    async function call(payload) {
+      if (!window.pluginInvoke) throw new Error('Open this plugin inside DigiTek Lab.');
+      return unwrapPluginResponse(await pluginInvoke(payload));
+    }
+
+    function unwrapPluginResponse(response) {
+      let data = response;
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); }
+        catch (_err) { return data; }
+      }
+      if (data && typeof data === 'object' && data.status === 'error') {
+        throw new Error(data.reason || 'Plugin backend error');
+      }
+      if (data && typeof data === 'object' && data.status === 'ok') {
+        return data.result;
+      }
+      return data;
+    }
+
+    function showTab(id, btn) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.id === id));
+      document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function toggleAcc(id) {
+      document.getElementById(id).classList.toggle('open');
+    }
+
+    function randomTip() {
+      const text = 'Tip: ' + tips[Math.floor(Math.random() * tips.length)];
+      tipsGeneral.textContent = text;
+      tipsMisc.textContent = text;
+    }
+
+    function readSettings() {
+      return {
+        bbox: [bbox0.value, bbox1.value, bbox2.value, bbox3.value].map(Number),
+        clickLocation: [click0.value, click1.value].map(Number),
+        magicValue: Number(magicValue.value),
+        objectDetectionOverlay: !!(settings && settings.objectDetectionOverlay),
+        showOverlay: showOverlay.checked,
+        startPaused: startPaused.checked,
+        failingMultiplier: Number(failingMultiplier.value),
+        failingPattern: failingPattern.value,
+        timer: timer.checked,
+        timerDuration: Number(timerDuration.value),
+        timerUnit: timerUnit.value,
+        goHome: false,
+        quitGame: false,
+        notifyOnEnd: false
+      };
+    }
+
+    function writeSettings(s) {
+      settings = s || {};
+      [bbox0.value, bbox1.value, bbox2.value, bbox3.value] = settings.bbox || [0,800,0,600];
+      [click0.value, click1.value] = settings.clickLocation || [0,0];
+      magicValue.value = settings.magicValue ?? 100;
+      magicLabel.textContent = magicValue.value;
+      showOverlay.checked = !!settings.showOverlay;
+      startPaused.checked = !!settings.startPaused;
+      failingMultiplier.value = settings.failingMultiplier ?? 0;
+      failingRange.value = failingMultiplier.value;
+      failingPattern.value = settings.failingPattern || 'Random';
+      timer.checked = !!settings.timer;
+      timerDuration.value = settings.timerDuration ?? 60;
+      timerUnit.value = settings.timerUnit || 'minutes';
+      validateRegionShape(true);
+    }
+
+    async function saveSettings() {
+      try {
+        const r = await call({ action: 'save_settings', settings: readSettings() });
+        writeSettings(r);
+        setStatus('Status: Settings Saved');
+        return r;
+      } catch (err) {
+        setStatus('Status: ' + err.message, 'error');
+        throw err;
+      }
+    }
+
+    async function checkHealth() {
+      const r = await call({ action: 'health' });
+      if (!r || !r.ok) {
+        throw new Error((r && r.message) || 'Fishbot Python runtime is unavailable.');
+      }
+      return r;
+    }
+
+    function scheduleLiveSettings() {
+      magicLabel.textContent = magicValue.value;
+      failingRange.value = failingMultiplier.value;
+      if (liveTimer) clearTimeout(liveTimer);
+      liveTimer = setTimeout(async () => {
+        liveTimer = null;
+        if (!validateRegionShape(false)) return;
+        try {
+          const r = await call({ action: 'live_settings', settings: readSettings() });
+          settings = r.settings || settings;
+          renderBot(r.bot);
+        } catch (err) {
+          setStatus('Status: ' + err.message, 'error');
+        }
+      }, 120);
+    }
+
+    function bindLiveSettings() {
+      [
+        bbox0, bbox1, bbox2, bbox3,
+        click0, click1,
+        magicValue,
+        showOverlay, startPaused,
+        failingRange, failingMultiplier, failingPattern,
+        timer, timerDuration, timerUnit
+      ].forEach(el => {
+        el.addEventListener('input', () => {
+          if (el === failingRange) failingMultiplier.value = failingRange.value;
+          if (el === failingMultiplier) failingRange.value = failingMultiplier.value;
+          validateRegionShape(false);
+          scheduleLiveSettings();
+        });
+        el.addEventListener('change', scheduleLiveSettings);
+      });
+    }
+
+    async function pickRegion() {
+      regionBtn.disabled = true;
+      const oldText = regionBtn.textContent;
+      regionBtn.textContent = 'Loading...';
+      setStatus('Status: Drag over the bobber detection region...');
+      try {
+        await checkHealth();
+        const r = await call({ action: 'pick_region' });
+        writeSettings(r);
+        if (validateRegionShape(false)) setStatus('Status: Region Selected');
+      } catch (err) {
+        setStatus('Status: ' + err.message, 'error');
+      } finally {
+        regionBtn.disabled = false;
+        regionBtn.textContent = oldText;
+      }
+    }
+
+    async function pickClick() {
+      clickBtn.disabled = true;
+      const oldText = clickBtn.textContent;
+      clickBtn.textContent = 'Loading...';
+      setStatus('Status: Click the location Fishbot should press...');
+      try {
+        await checkHealth();
+        const r = await call({ action: 'pick_click_location' });
+        writeSettings(r);
+        setStatus('Status: Click Location Selected');
+      } catch (err) {
+        setStatus('Status: ' + err.message, 'error');
+      } finally {
+        clickBtn.disabled = false;
+        clickBtn.textContent = oldText;
+      }
+    }
+
+    async function startBot() {
+      if (starting) return;
+      starting = true;
+      if (liveTimer) {
+        clearTimeout(liveTimer);
+        liveTimer = null;
+      }
+      if (!validateRegionShape(false)) {
+        starting = false;
+        return;
+      }
+      startBtn.disabled = true;
+      const oldText = startBtn.textContent;
+      startBtn.textContent = 'Loading...';
+      setStatus('Status: Starting...');
+      try {
+        await checkHealth();
+        const r = await call({ action: 'start', settings: readSettings() });
+        starting = false;
+        startBtn.textContent = oldText;
+        renderBot(r);
+        poll();
+        setStatus('Status: ' + (r.message || 'Test Ran Successfully, Fishbot Started'));
+      } catch (err) {
+        starting = false;
+        startBtn.disabled = false;
+        startBtn.textContent = oldText;
+        setStatus('Status: ' + err.message, 'error');
+      }
+    }
+
+    async function stopBot() {
+      stopBtn.disabled = true;
+      const oldText = stopBtn.textContent;
+      stopBtn.textContent = 'Loading...';
+      try {
+        const r = await call({ action: 'stop' });
+        stopBtn.textContent = oldText;
+        renderBot(r);
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = null;
+        setStatus('Status: Stopped');
+      } catch (err) {
+        stopBtn.textContent = oldText;
+        setStatus('Status: ' + err.message, 'error');
+        const r = await safeStatus();
+        renderBot(r && r.bot ? r.bot : { running:false });
+      }
+    }
+
+    async function safeStatus() {
+      try {
+        return await call({ action: 'status' });
+      } catch (_err) {
+        return null;
+      }
+    }
+
+    function poll() {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(async () => {
+        try {
+          const r = await call({ action: 'status' });
+          settings = r.settings || settings;
+          renderBot(r.bot);
+          if (!r.bot.running && pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        } catch (err) {
+          if (pollTimer) clearInterval(pollTimer);
+          pollTimer = null;
+          renderBot({ running:false });
+          setStatus('Status: ' + err.message, 'error');
+        }
+      }, 1500);
+    }
+
+    async function calculateBudget() {
+      try {
+        const r = await call({
+          action: 'budget',
+          settings: readSettings(),
+          overallLevel: overallLevel.value,
+          fishermanLevel: fishermanLevel.value,
+          excellentEmployee: excellentEmployee.checked,
+          moodPercent: 0.7
+        });
+        income.textContent = '~' + r.formatted.income;
+        bonus.textContent = 'Excellent Employee bonus: +' + r.formatted.bonus;
+        expense.textContent = 'Humanization Expense: -' + r.formatted.expense;
+        randomTip();
+      } catch (err) {
+        setStatus('Status: ' + err.message, 'error');
+      }
+    }
+
+    function clearBudget() {
+      overallLevel.value = '';
+      fishermanLevel.value = '';
+      excellentEmployee.checked = false;
+      income.textContent = '$0.00';
+      bonus.textContent = '';
+      expense.textContent = '';
+    }
+
+    function renderBot(bot) {
+      bot = bot || {};
+      startBtn.disabled = starting || !!bot.running;
+      stopBtn.disabled = !bot.running;
+      if (bot.error) setStatus('Status: ' + bot.error, 'error');
+      else if (bot.message) setStatus('Status: ' + bot.message);
+    }
+
+    async function saveAndQuit() {
+      try {
+        await saveSettings();
+        if (window.parent && window.parent.closeModal) window.parent.closeModal(null);
+        else window.close();
+      } catch (_err) {}
+    }
+
+    function validateRegionShape(silent) {
+      const bbox = [bbox0.value, bbox1.value, bbox2.value, bbox3.value].map(Number);
+      const width = Math.abs((bbox[1] || 0) - (bbox[0] || 0));
+      const height = Math.abs((bbox[3] || 0) - (bbox[2] || 0));
+      const ok = width >= height;
+      if (!ok && !silent) setStatus('Status: Region width must be greater than or equal to its height.', 'error');
+      return ok;
+    }
+
+    function setStatus(text, kind) {
+      const statusEl = document.getElementById('status');
+      statusEl.value = text || '';
+      statusEl.style.color = kind === 'error' ? '#b91c1c' : '#333';
+    }
+
+    async function boot() {
+      try {
+        const health = await call({ action: 'health' });
+        if (!health.ok) setStatus('Status: ' + health.message, 'error');
+        const r = await call({ action: 'status' });
+        writeSettings(r.settings);
+        if (health.ok) renderBot(r.bot);
+        else {
+          startBtn.disabled = true;
+          regionBtn.disabled = true;
+          clickBtn.disabled = true;
+          stopBtn.disabled = !(r.bot && r.bot.running);
+        }
+        bindLiveSettings();
+        if (r.bot.running) poll();
+      } catch (err) {
+        setStatus('Status: ' + err.message);
+      }
+    }
+
+    boot();
+  </script>
+</body>
+</html>

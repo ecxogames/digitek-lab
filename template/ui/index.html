@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Template Plugin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font-family: Inter, Segoe UI, sans-serif; background: #111; color: #e5e7eb; }
+    main { padding: 18px; display: grid; gap: 14px; }
+    h1 { margin: 0; font-size: 18px; }
+    p { margin: 0; color: #9ca3af; line-height: 1.5; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    input { flex: 1; min-width: 0; border: 1px solid #333; background: #181818; color: #e5e7eb; border-radius: 6px; padding: 9px 10px; }
+    button { border: 0; border-radius: 6px; background: #2563eb; color: #fff; padding: 9px 12px; cursor: pointer; font-weight: 600; }
+    pre { margin: 0; min-height: 80px; padding: 12px; border-radius: 6px; border: 1px solid #2a2a2a; background: #0a0a0a; color: #93c5fd; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Template Plugin</h1>
+    <p>This plugin runs inside DigiTek Lab and calls its own Python backend through <code>pluginInvoke()</code>.</p>
+    <div class="row">
+      <input id="name" value="DigiTek" aria-label="Name">
+      <button onclick="ping()">Ping Backend</button>
+    </div>
+    <pre id="out">Ready.</pre>
+  </main>
+  <script>
+    async function ping() {
+      const out = document.getElementById('out');
+      try {
+        if (!window.pluginInvoke) throw new Error('pluginInvoke is only available inside DigiTek Lab.');
+        const result = await pluginInvoke({ action: 'ping', name: document.getElementById('name').value });
+        out.textContent = JSON.stringify(result, null, 2);
+      } catch (err) {
+        out.textContent = err.message;
+      }
+    }
+  </script>
+</body>
+</html>
