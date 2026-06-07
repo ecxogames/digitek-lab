@@ -1,0 +1,57 @@
+<modal width="430" height="240" blur="true" closeable="true" titlebar="false">
+    <titlebar value="false" height="40">
+        <div style="position:relative;height:100%;background:rgba(255,255,255,0.35);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:space-between;font-family:'Roboto','Segoe UI',sans-serif;user-select:none;">
+            <div style="position:absolute;inset:0;cursor:move;z-index:0;" onmousedown="if(window.dragWindow) window.dragWindow('')"></div>
+            <div style="position:relative;z-index:1;display:flex;align-items:center;gap:9px;padding-left:14px;pointer-events:none;">
+                <div id="tb-icon" style="width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.45);color:rgba(99,102,241,1);font-size:13px;font-weight:700;">?</div>
+                <span id="tb-label" style="font-size:12px;font-weight:600;color:rgba(0,0,0,0.6);">Confirm</span>
+            </div>
+            <button onclick="Cancel()" title="Close" style="position:relative;z-index:1;width:44px;height:40px;border:none;background:transparent;color:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s ease;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='rgba(0,0,0,0.45)'">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
+            </button>
+        </div>
+    </titlebar>
+
+    <title><value>Confirm</value></title>
+
+    <content>
+        <div style="display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;height:100%;width:100%;background:#DCDCDC;color:rgba(0,0,0,0.85);font-family:'Roboto','Segoe UI',sans-serif;padding:22px;box-sizing:border-box;">
+            <div>
+                <h2 id="c-title" style="margin:0 0 8px;font-size:16px;line-height:1.2;font-weight:600;color:rgba(0,0,0,0.85);">Are you sure?</h2>
+                <p id="c-message" style="margin:0;font-size:13px;line-height:1.5;color:rgba(0,0,0,0.55);"></p>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button onclick="Cancel()" id="c-cancel" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:12px;font-size:13px;font-weight:500;border:1px solid rgba(255,255,255,0.6);background:rgba(255,255,255,0.4);color:rgba(0,0,0,0.7);cursor:pointer;transition:all 0.2s ease;" onmouseover="this.style.background='rgba(255,255,255,0.6)'" onmouseout="this.style.background='rgba(255,255,255,0.4)'">Cancel</button>
+                <button onclick="Confirm()" id="c-ok" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:12px;font-size:13px;font-weight:500;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.2);color:rgba(190,40,40,0.95);cursor:pointer;transition:all 0.2s ease;" onmouseover="this.style.background='rgba(239,68,68,0.32)'" onmouseout="this.style.background='rgba(239,68,68,0.2)'">Confirm</button>
+            </div>
+        </div>
+    </content>
+
+    <script>
+        const p = window.__esd_payload || {};
+        if (p.title)   document.getElementById('c-title').textContent = p.title;
+        if (p.message) document.getElementById('c-message').textContent = p.message;
+        if (p.tbLabel) document.getElementById('tb-label').textContent = p.tbLabel;
+        if (p.confirmLabel) document.getElementById('c-ok').textContent = p.confirmLabel;
+        if (p.cancelLabel) document.getElementById('c-cancel').textContent = p.cancelLabel;
+
+        // Non-destructive styling option (default is danger/red).
+        if (p.danger === false) {
+            const ok = document.getElementById('c-ok');
+            ok.style.border = '1px solid rgba(99,102,241,0.45)';
+            ok.style.background = 'rgba(99,102,241,0.25)';
+            ok.style.color = 'rgba(99,102,241,1)';
+            ok.onmouseover = () => ok.style.background = 'rgba(99,102,241,0.4)';
+            ok.onmouseout = () => ok.style.background = 'rgba(99,102,241,0.25)';
+            const icon = document.getElementById('tb-icon');
+            icon.textContent = 'i';
+        }
+
+        function Confirm() { closeModal(true); }
+        function Cancel() { closeModal(false); }
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') Confirm();
+            else if (event.key === 'Escape') Cancel();
+        });
+    </script>
+</modal>

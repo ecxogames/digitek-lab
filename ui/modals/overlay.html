@@ -1,0 +1,131 @@
+<modal width="800" height="600" fullscreen="true" transparent="true" closeable="true">
+    <titlebar value="false" height="0"></titlebar>
+
+    <title><value>Pick on screen</value></title>
+
+    <content>
+        <div id="ov-root" style="position:fixed;inset:0;width:100vw;height:100vh;cursor:crosshair;font-family:'Roboto','Segoe UI',sans-serif;overflow:hidden;">
+            <!-- faint frame so the user can see the overlay is active without hiding the screen -->
+            <div style="position:absolute;inset:0;border:2px solid rgba(99,102,241,0.55);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.25);pointer-events:none;"></div>
+
+            <svg id="ov-svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+                <defs>
+                    <marker id="ov-arrow" markerWidth="12" markerHeight="12" refX="8" refY="4" orient="auto">
+                        <path d="M0,0 L8,4 L0,8 Z" fill="#6366f1"/>
+                    </marker>
+                </defs>
+                <line id="ov-line" x1="0" y1="0" x2="0" y2="0" stroke="#fff" stroke-width="6" stroke-linecap="round" visibility="hidden"/>
+                <line id="ov-line2" x1="0" y1="0" x2="0" y2="0" stroke="#6366f1" stroke-width="3" stroke-linecap="round" marker-end="url(#ov-arrow)" visibility="hidden"/>
+                <circle id="ov-from" r="9" fill="rgba(99,102,241,0.9)" stroke="#fff" stroke-width="2.5" visibility="hidden"/>
+                <circle id="ov-to" r="9" fill="rgba(34,197,94,0.95)" stroke="#fff" stroke-width="2.5" visibility="hidden"/>
+            </svg>
+
+            <!-- instruction pill -->
+            <div id="ov-hint" style="position:absolute;top:22px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:11px 18px;border-radius:100px;background:rgba(20,20,30,0.72);backdrop-filter:blur(12px);color:#fff;font-size:13px;font-weight:500;box-shadow:0 8px 30px rgba(0,0,0,0.35);pointer-events:none;white-space:nowrap;">
+                <span id="ov-hint-text">Drag to draw the camera pan</span>
+                <span id="ov-coords" style="font-family:'Consolas',monospace;font-size:12px;opacity:0.8;"></span>
+            </div>
+
+            <!-- action buttons -->
+            <div style="position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;gap:10px;">
+                <button onclick="Cancel()" style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:12px;font-size:13px;font-weight:600;border:1px solid rgba(255,255,255,0.4);background:rgba(30,30,40,0.7);backdrop-filter:blur(12px);color:#fff;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.3);">Cancel <small style="opacity:0.6;">Esc</small></button>
+                <button id="ov-confirm" onclick="Confirm()" disabled style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:12px;font-size:13px;font-weight:600;border:1px solid rgba(99,102,241,0.6);background:rgba(99,102,241,0.85);color:#fff;cursor:pointer;box-shadow:0 6px 20px rgba(99,102,241,0.4);opacity:0.5;">Confirm <small style="opacity:0.7;">Enter</small></button>
+            </div>
+        </div>
+    </content>
+
+    <script>
+        const mode = (window.__esd_payload && window.__esd_payload.mode) || 'line';
+        const root = document.getElementById('ov-root');
+        const svg = document.getElementById('ov-svg');
+        const lnBg = document.getElementById('ov-line');
+        const ln = document.getElementById('ov-line2');
+        const cFrom = document.getElementById('ov-from');
+        const cTo = document.getElementById('ov-to');
+        const hintText = document.getElementById('ov-hint-text');
+        const coords = document.getElementById('ov-coords');
+        const confirmBtn = document.getElementById('ov-confirm');
+
+        hintText.textContent = mode === 'line'
+            ? 'Drag from the start to the end of the camera pan'
+            : 'Click where the cursor should go';
+
+        let from = null, to = null, dragging = false, hasResult = false;
+
+        function norm(e) {
+            return {
+                x: Math.max(0, Math.min(1, e.clientX / window.innerWidth)),
+                y: Math.max(0, Math.min(1, e.clientY / window.innerHeight)),
+            };
+        }
+        function px(n) { return { x: n.x * window.innerWidth, y: n.y * window.innerHeight }; }
+
+        function drawDot(circle, n) {
+            const p = px(n);
+            circle.setAttribute('cx', p.x);
+            circle.setAttribute('cy', p.y);
+            circle.setAttribute('visibility', 'visible');
+        }
+        function drawLine(a, b) {
+            const pa = px(a), pb = px(b);
+            [lnBg, ln].forEach(l => {
+                l.setAttribute('x1', pa.x); l.setAttribute('y1', pa.y);
+                l.setAttribute('x2', pb.x); l.setAttribute('y2', pb.y);
+                l.setAttribute('visibility', 'visible');
+            });
+        }
+        function setConfirm(on) {
+            hasResult = on;
+            confirmBtn.disabled = !on;
+            confirmBtn.style.opacity = on ? '1' : '0.5';
+        }
+        function showCoords() {
+            if (mode === 'line' && from && to) {
+                coords.textContent = `(${from.x.toFixed(2)}, ${from.y.toFixed(2)}) → (${to.x.toFixed(2)}, ${to.y.toFixed(2)})`;
+            } else if (from) {
+                coords.textContent = `(${from.x.toFixed(2)}, ${from.y.toFixed(2)})`;
+            } else coords.textContent = '';
+        }
+
+        if (mode === 'line') {
+            root.addEventListener('pointerdown', (e) => {
+                if (e.target.closest('button')) return;
+                dragging = true;
+                from = norm(e); to = norm(e);
+                root.setPointerCapture(e.pointerId);
+                drawDot(cFrom, from); showCoords();
+            });
+            root.addEventListener('pointermove', (e) => {
+                if (!dragging) return;
+                to = norm(e);
+                drawLine(from, to); drawDot(cTo, to); showCoords();
+            });
+            root.addEventListener('pointerup', (e) => {
+                if (!dragging) return;
+                dragging = false;
+                to = norm(e);
+                drawLine(from, to); drawDot(cTo, to); showCoords();
+                setConfirm(true);
+            });
+        } else {
+            root.addEventListener('pointerdown', (e) => {
+                if (e.target.closest('button')) return;
+                from = norm(e);
+                drawDot(cFrom, from); showCoords();
+                setConfirm(true);
+            });
+        }
+
+        function Confirm() {
+            if (!hasResult) return;
+            if (mode === 'line') closeModal({ fromX: from.x, fromY: from.y, toX: to.x, toY: to.y });
+            else closeModal({ x: from.x, y: from.y });
+        }
+        function Cancel() { closeModal(null); }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') Confirm();
+            else if (e.key === 'Escape') Cancel();
+        });
+    </script>
+</modal>

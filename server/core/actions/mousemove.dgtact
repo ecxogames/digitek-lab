@@ -1,0 +1,16 @@
+{
+  "format": "dgtact",
+  "schema": 1,
+  "type": "action",
+  "actionType": "mousemove",
+  "name": "Move Cursor",
+  "icon": "open_with",
+  "description": "Jump cursor to a point",
+  "order": 3,
+  "defaults": { "x": 0.5, "y": 0.5 },
+  "pick": { "mode": "point" },
+  "fields": [
+    { "k": "x", "label": "X", "type": "number", "step": "0.01", "widget": "coord" },
+    { "k": "y", "label": "Y", "type": "number", "step": "0.01", "widget": "coord" }
+  ]
+}

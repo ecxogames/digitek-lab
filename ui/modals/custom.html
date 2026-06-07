@@ -1,0 +1,40 @@
+<modal width="420" height="260" blur="false" closeable="true" titlebar="false">
+    <titlebar value="false" height="40">
+        <div style="position:relative;height:100%;background:rgba(255,255,255,0.35);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:space-between;font-family:'Roboto','Segoe UI',sans-serif;user-select:none;">
+            <div style="position:absolute;inset:0;cursor:move;z-index:0;" onmousedown="if(window.dragWindow) window.dragWindow('')"></div>
+            <div style="position:relative;z-index:1;display:flex;align-items:center;gap:9px;padding-left:14px;pointer-events:none;">
+                <div style="width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.45);">
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                        <rect x="0.5" y="0.5" width="5.5" height="5.5" rx="1.2" fill="#6366f1"/>
+                        <rect x="8" y="0.5" width="5.5" height="5.5" rx="1.2" fill="#818cf8" opacity="0.65"/>
+                        <rect x="0.5" y="8" width="5.5" height="5.5" rx="1.2" fill="#818cf8" opacity="0.65"/>
+                        <rect x="8" y="8" width="5.5" height="5.5" rx="1.2" fill="#6366f1"/>
+                    </svg>
+                </div>
+                <span style="font-size:12px;font-weight:600;color:rgba(0,0,0,0.6);">Custom Modal</span>
+            </div>
+            <button onclick="Close()" title="Close" style="position:relative;z-index:1;width:44px;height:40px;border:none;background:transparent;color:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s ease;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='rgba(0,0,0,0.45)'">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="1" y1="1" x2="9" y2="9"/><line x1="9" y1="1" x2="1" y2="9"/></svg>
+            </button>
+        </div>
+    </titlebar>
+
+    <title><value>Custom Modal</value></title>
+
+    <content>
+        <div style="display:flex;flex-direction:column;justify-content:space-between;align-items:center;height:100%;width:100%;background:#DCDCDC;color:rgba(0,0,0,0.85);font-family:'Roboto','Segoe UI',sans-serif;padding:22px;box-sizing:border-box;">
+            <h2 style="margin:0 0 8px;font-size:16px;line-height:1.2;font-weight:600;color:rgba(0,0,0,0.85);">My Modal</h2>
+            <p style="margin:0 0 16px;font-size:13px;line-height:1.5;color:rgba(0,0,0,0.55);text-align:center;">Add your own content here.</p>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+                <button onclick="OnCancel()" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:12px;font-size:13px;font-weight:500;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.2);color:rgba(190,40,40,0.95);cursor:pointer;transition:all 0.2s ease;" onmouseover="this.style.background='rgba(239,68,68,0.32)'" onmouseout="this.style.background='rgba(239,68,68,0.2)'">Cancel</button>
+                <button onclick="OnConfirm()" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:12px;font-size:13px;font-weight:500;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.2);color:rgba(20,140,60,0.95);cursor:pointer;transition:all 0.2s ease;" onmouseover="this.style.background='rgba(34,197,94,0.32)'" onmouseout="this.style.background='rgba(34,197,94,0.2)'">Confirm</button>
+            </div>
+        </div>
+    </content>
+
+    <script>
+        function OnConfirm() { closeModal(true); }
+        function OnCancel() { closeModal(false); }
+        function Close() { closeModal(); }
+    </script>
+</modal>

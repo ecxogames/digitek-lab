@@ -1,0 +1,14 @@
+{
+  "format": "dgtact",
+  "schema": 1,
+  "type": "action",
+  "actionType": "keypress",
+  "name": "Key Press",
+  "icon": "keyboard",
+  "description": "Tap a single key",
+  "order": 1,
+  "defaults": { "key": "w" },
+  "fields": [
+    { "k": "key", "label": "Key", "type": "text", "widget": "key", "hint": "Click “Record” then press one key — held for the clip's length" }
+  ]
+}

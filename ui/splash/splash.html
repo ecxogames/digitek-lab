@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loading...</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0F0F0F;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            overflow: hidden;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            position: absolute;
+        }
+
+        /* The transparent blur overlay */
+        .blur-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            backdrop-filter: blur(60px);
+            -webkit-backdrop-filter: blur(60px);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #liquidCanvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+        }
+
+        .drag-area {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        .content {
+            z-index: 3;
+            text-align: center;
+            pointer-events: none; /* Let drag events pass through */
+        }
+
+        h2 {
+            font-size: 1rem;
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="liquidCanvas"></canvas>
+    <div class="blur-overlay"></div>
+    <div class="drag-area" onmousedown="if(window.dragWindow) window.dragWindow('')"></div>
+    <div class="content">
+        <h2>Initializing...</h2>
+    </div>
+
+    <script>
+        // Liquid simulation logic
+        const canvas = document.getElementById('liquidCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        const particles = [];
+        const numParticles = 25;
+
+        for (let i = 0; i < numParticles; i++) {
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4,
+                radius: Math.random() * 60 + 60,
+                color: Math.random() > 0.5 ? '#091330' : '#12294e' // Deep blue and bright blue
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                
+                // Simple physics
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Bounce off edges smoothly
+                if (p.x < -p.radius * 2) { p.x = width + p.radius; }
+                if (p.x > width + p.radius * 2) { p.x = -p.radius; }
+                if (p.y < -p.radius * 2) { p.y = height + p.radius; }
+                if (p.y > height + p.radius * 2) { p.y = -p.radius; }
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+            }
+
+            requestAnimationFrame(draw);
+        }
+        draw();
+
+        // Wait 3 seconds then seamlessly instruct C++ to transition to main app
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (window.transitionToMain) {
+                    window.transitionToMain("");
+                }
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
