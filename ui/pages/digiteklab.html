@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <link rel="stylesheet" href="stylesheets/index.css" />
+  <style id="activeThemeStyle"></style>
 </head>
 <body>
   <div class="gridOverlay"></div>
@@ -65,6 +66,18 @@
             <button class="mb-dd-item" onclick="closeAppMenus();zoomTimeline(1)"><span class="material-symbols-outlined">zoom_in</span>Zoom in</button>
             <button class="mb-dd-item" onclick="closeAppMenus();zoomTimeline(-1)"><span class="material-symbols-outlined">zoom_out</span>Zoom out</button>
             <button class="mb-dd-item" onclick="closeAppMenus();addLayer()"><span class="material-symbols-outlined">add</span>Add layer</button>
+            <div class="mb-dd-sep"></div>
+            <button class="mb-dd-item" onclick="closeAppMenus();onImportTheme()"><span class="material-symbols-outlined">palette</span>Import theme</button>
+            <button class="mb-dd-item" onclick="closeAppMenus();openThemeManager()"><span class="material-symbols-outlined">style</span>Manage themes</button>
+          </div>
+        </div>
+        <div class="mb-menu-wrap">
+          <button class="mb-menu" id="menuPluginsBtn" onmousedown="event.stopPropagation()" onclick="toggleAppMenu(event,'menuPlugins')">Plugins</button>
+          <div class="mb-dropdown" id="menuPlugins" onmousedown="event.stopPropagation()">
+            <button class="mb-dd-item" onclick="closeAppMenus();onImportPlugin()"><span class="material-symbols-outlined">extension</span>Import plugin</button>
+            <button class="mb-dd-item" onclick="closeAppMenus();openPluginMarketplace()"><span class="material-symbols-outlined">storefront</span>Plugin marketplace</button>
+            <button class="mb-dd-item" onclick="closeAppMenus();openPluginManager()"><span class="material-symbols-outlined">dashboard_customize</span>Manage plugins</button>
+            <button class="mb-dd-item" onclick="closeAppMenus();openPluginsFolder()"><span class="material-symbols-outlined">folder_open</span>Open plugins folder</button>
           </div>
         </div>
         <div class="mb-menu-wrap">
@@ -74,14 +87,11 @@
             <button class="mb-dd-item" onclick="closeAppMenus();openMotionSettings(event)"><span class="material-symbols-outlined">tune</span>Motion Control settings</button>
             <button class="mb-dd-item" onclick="closeAppMenus();toggleContinuous()"><span class="material-symbols-outlined">repeat</span>Continuous playback</button>
             <div class="mb-dd-sep"></div>
-            <button class="mb-dd-item" onclick="closeAppMenus();startTour()"><span class="material-symbols-outlined">help</span>Guided tour</button>
+            <button class="mb-dd-item" onclick="closeAppMenus();openTutorial()"><span class="material-symbols-outlined">smart_display</span>Tutorial</button>
           </div>
         </div>
       </div>
       <div class="tb-side right">
-        <button class="win-btn title-play-btn" id="titlePlayBtn" onmousedown="event.stopPropagation()" onclick="onPlayPause()" title="Play / Pause execution (Space)" aria-label="Play / Pause">
-          <span class="material-symbols-outlined" id="titlePlayIcon">play_arrow</span>
-        </button>
         <span class="status-pill">
           <span class="status-dot" id="statusDot"></span>
           <span class="status-pre">Status:</span>
@@ -112,6 +122,8 @@
       <button class="ToolBtn" id="deleteBtn" title="Delete selected clip (Del)" onclick="deleteSelectedClip()">
         <span class="material-symbols-outlined">delete</span>
       </button>
+      <div class="ToolbarDivider plugin-pin-divider" id="pluginPinDivider" hidden></div>
+      <div class="PinnedPlugins" id="pinnedPlugins" aria-label="Pinned plugins"></div>
       <input type="checkbox" id="motionToggle" hidden>
     </div>
 
@@ -144,7 +156,9 @@
         <!-- Header: title · snap · add track -->
         <div class="tlx-header">
           <span class="tlx-header-title">Timeline</span>
-          <button class="tlx-snap active" id="snapBtn" onclick="toggleSnap()" title="Snapping on — click to disable"><span class="material-symbols-outlined">grid_on</span></button>
+          <button class="tlx-snap active" id="snapBtn" onclick="toggleSnap()" title="Snapping on — click to disable" style="padding:5px;" aria-label="Toggle snapping">
+            <img src="https://img.icons8.com/?size=100&id=4l8AyL1DOUKb&format=png&color=FFFFFF" alt="Snap icon" style="width:100%;aspect-ratio:1/1;">
+          </button>
           <button class="tlx-track-btn" onclick="addLayer()" title="Add a layer"><span class="material-symbols-outlined">add</span>Track</button>
         </div>
         <!-- Tracks: ruler + (track heads | lanes) -->
@@ -194,8 +208,8 @@
         <button class="x" onclick="closeAppModal()"><span class="material-symbols-outlined">close</span></button>
       </div>
       <div class="modal-body" id="modalBody"></div>
-      <div class="modal-foot">
-        <button class="GTextBtn ghost" onclick="closeAppModal()">Cancel</button>
+      <div class="modal-foot" id="modalFoot">
+        <button class="GTextBtn ghost" id="modalCancel" onclick="closeAppModal()">Cancel</button>
         <button class="GTextBtn primary" id="modalOk" onclick="onModalOk()">Add</button>
       </div>
     </div>
@@ -216,25 +230,6 @@
   </div>
 
   <div class="toast-wrap" id="toastWrap"></div>
-
-  <!-- Spotlight tutorial -->
-  <div class="tour-block" id="tourBlock"></div>
-  <div class="tour-hole" id="tourHole"></div>
-  <div class="tour-tip" id="tourTip">
-    <div class="tour-tip-head">
-      <span class="material-symbols-outlined" id="tourIcon">tips_and_updates</span>
-      <span class="tour-tip-title" id="tourTitle"></span>
-    </div>
-    <div class="tour-tip-body" id="tourBody"></div>
-    <div class="tour-tip-foot">
-      <span class="tour-count" id="tourCount"></span>
-      <div class="tour-tip-btns">
-        <button class="tour-skip" id="tourSkip" onclick="endTour(true)">Skip</button>
-        <button class="GTextBtn ghost" id="tourBack" onclick="prevTourStep()">Back</button>
-        <button class="GTextBtn primary" id="tourNext" onclick="nextTourStep()">Next</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Menu-bar dropdown handling -->
   <script>

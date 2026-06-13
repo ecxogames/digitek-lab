@@ -12,6 +12,8 @@ from . import player
 from . import hotkeys
 from . import dialogs
 from . import input_driver
+from . import plugins
+from . import themes
 
 
 def _ok(result):
@@ -126,6 +128,61 @@ def handle_message(message_str):
             if not path:
                 return _ok({"cancelled": True})
             return _ok(macros.read_raw_file(path))
+
+        # ── DigiTek Lab: plugins ───────────────────────────────────────
+        elif action == "dgt_list_plugins":
+            return _ok(plugins.list_plugins())
+        elif action == "dgt_import_plugin":
+            path = dialogs.open_file(kind="plugin")
+            if not path:
+                return _ok({"cancelled": True})
+            return _ok(plugins.import_plugin(path))
+        elif action == "dgt_remove_plugin":
+            return _ok(plugins.remove_plugin(req.get("pluginId")))
+        elif action == "dgt_clear_plugin_cache":
+            return _ok(plugins.clear_plugin_cache(req.get("pluginId")))
+        elif action == "dgt_open_plugins_folder":
+            return _ok(plugins.open_plugins_folder())
+        elif action == "dgt_get_pinned_plugins":
+            return _ok(plugins.get_pinned_plugins())
+        elif action == "dgt_set_pinned_plugins":
+            return _ok(plugins.set_pinned_plugins(req.get("pluginIds", [])))
+        elif action == "dgt_marketplace_plugins":
+            return _ok(plugins.marketplace_manifest())
+        elif action == "dgt_install_marketplace_plugin":
+            return _ok(plugins.install_marketplace_plugin(req.get("pluginId")))
+        elif action == "dgt_plugin_update_status":
+            return _ok(plugins.plugin_update_status(req.get("pluginId")))
+        elif action == "dgt_update_plugin":
+            return _ok(plugins.install_marketplace_plugin(req.get("pluginId")))
+        elif action == "dgt_load_plugin_ui":
+            return _ok(plugins.load_ui(req.get("pluginId")))
+        elif action == "dgt_plugin_call":
+            raw = plugins.call_plugin(req.get("pluginId"), req.get("payload", {}))
+            try:
+                parsed = json.loads(raw) if isinstance(raw, str) else raw
+                if isinstance(parsed, dict) and parsed.get("status") == "error":
+                    return _err(parsed.get("reason", "Plugin backend error"))
+                if isinstance(parsed, dict) and parsed.get("status") == "ok":
+                    return _ok(parsed.get("result"))
+                return _ok(parsed)
+            except Exception:
+                return _ok(raw)
+
+        # ── DigiTek Lab: themes ────────────────────────────────────────
+        elif action == "dgt_list_themes":
+            return _ok(themes.list_themes())
+        elif action == "dgt_active_theme":
+            return _ok(themes.active_theme())
+        elif action == "dgt_import_theme":
+            path = dialogs.open_file(kind="theme")
+            if not path:
+                return _ok({"cancelled": True})
+            return _ok(themes.import_theme(path))
+        elif action == "dgt_set_theme":
+            return _ok(themes.set_active(req.get("themeId", "")))
+        elif action == "dgt_remove_theme":
+            return _ok(themes.remove_theme(req.get("themeId")))
 
         # ── DigiTek Lab: recording ─────────────────────────────────────
         elif action == "dgt_record_start":

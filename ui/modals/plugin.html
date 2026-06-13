@@ -1,0 +1,66 @@
+<modal width="385" height="570" blur="false" closeable="true">
+  <title>
+    <value>Plugin</value>
+  </title>
+  <content>
+    <iframe id="pluginFrame" style="width:100%;height:100%;border:0;display:block;background:#0f0f0f;"></iframe>
+  </content>
+  <script>
+    const payload = window.__esd_payload || {};
+    const frame = document.getElementById('pluginFrame');
+    const pluginHtml = payload.htmlBase64
+      ? decodeURIComponent(escape(atob(payload.htmlBase64)))
+      : (payload.html || '');
+    const cacheBust = String(payload.cacheBust || Date.now());
+
+    function injectPluginBridge(html, pluginId) {
+      const boot = `<script>
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.addEventListener('keydown', event => {
+          const key = String(event.key || '').toLowerCase();
+          const blocked = key === 'f12' || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c'].includes(key));
+          if (blocked) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }, true);
+        window.DIGITEK_PLUGIN_ID = ${JSON.stringify(pluginId)};
+        window.pluginInvoke = function(payload) {
+          return window.parent.__dgtPluginBridge(${JSON.stringify(pluginId)}, payload || {});
+        };
+      <\/script>`;
+      return /<head[^>]*>/i.test(html)
+        ? html.replace(/<head[^>]*>/i, m => m + boot)
+        : boot + html;
+    }
+
+    window.__dgtPluginBridge = async function(pluginId, body) {
+      if (!window.invokeBridge) throw new Error('Backend bridge not available.');
+      const res = await window.invokeBridge({ action:'dgt_plugin_call', pluginId, payload: body || {} });
+      if (!res || res.status !== 'ok') throw new Error((res && res.reason) || 'Plugin backend error');
+      if (typeof res.result === 'string') {
+        try {
+          const parsed = JSON.parse(res.result);
+          if (parsed && parsed.status === 'error') throw new Error(parsed.reason || 'Plugin backend error');
+          if (parsed && parsed.status === 'ok') return parsed.result;
+        } catch (err) {
+          if (err && err.message !== res.result) throw err;
+        }
+      }
+      return res.result;
+    };
+
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.addEventListener('keydown', event => {
+      const key = String(event.key || '').toLowerCase();
+      const blocked = key === 'f12' || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c'].includes(key));
+      if (blocked) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }, true);
+
+    if (payload.plugin && payload.plugin.name) document.title = payload.plugin.name;
+    frame.srcdoc = '<!-- cacheBust:' + cacheBust + ' -->' + injectPluginBridge(pluginHtml, payload.pluginId || (payload.plugin && payload.plugin.id) || '');
+  </script>
+</modal>

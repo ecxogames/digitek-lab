@@ -43,6 +43,8 @@ static std::string GetPageHtml(const std::string& path) {
 
 // ── Modal parsing helpers ──────────────────────────────────────────────────
 
+std::string CallPythonBackend(const std::string& message);
+
 // Extract a quoted attribute value from an HTML-like opening tag string.
 static std::string ModalAttr(const std::string& tag, const std::string& attr,
                               const std::string& def = "") {
@@ -84,11 +86,42 @@ static std::string ModalInner(const std::string& html, const std::string& tag) {
     return inner.substr(s, e - s + 1);
 }
 
+static std::string JsonStringAttr(const std::string& json, const std::string& key) {
+    std::string needle = "\"" + key + "\"";
+    auto pos = json.find(needle);
+    if (pos == std::string::npos) return "";
+    pos = json.find(':', pos + needle.size());
+    if (pos == std::string::npos) return "";
+    pos = json.find('"', pos + 1);
+    if (pos == std::string::npos) return "";
+    std::string out;
+    bool esc = false;
+    for (size_t i = pos + 1; i < json.size(); ++i) {
+        char c = json[i];
+        if (esc) {
+            if (c == 'n') out += '\n';
+            else if (c == 'r') out += '\r';
+            else if (c == 't') out += '\t';
+            else out += c;
+            esc = false;
+            continue;
+        }
+        if (c == '\\') {
+            esc = true;
+            continue;
+        }
+        if (c == '"') break;
+        out += c;
+    }
+    return out;
+}
+
 // ── Modal OS-window thread ─────────────────────────────────────────────────
 
 struct ModalThreadParams {
     std::string generatedHtml;
     std::string windowTitle;
+    std::string iconPath;
     int   width;
     int   height;
     int   cornerRadius;  // rounded corners applied to frameless windows (0 = none)
@@ -109,6 +142,7 @@ static DWORD WINAPI ModalWindowThread(LPVOID param) {
     {
         webview::webview modal(p->devTools, nullptr);
         HWND mhwnd = static_cast<HWND>(modal.window());
+        modal.set_title(p->windowTitle);
 
 #ifdef _WIN32
         if (!p->useOsChrome) {
@@ -121,7 +155,6 @@ static DWORD WINAPI ModalWindowThread(LPVOID param) {
                          SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
         } else {
             // Native titlebar — keep chrome but lock size and set title
-            modal.set_title(p->windowTitle);
             if (!p->closeable) {
                 HMENU hMenu = GetSystemMenu(mhwnd, FALSE);
                 if (hMenu)
@@ -139,8 +172,12 @@ static DWORD WINAPI ModalWindowThread(LPVOID param) {
             SetWindowLongPtr(mhwnd, GWL_EXSTYLE, ex);
         }
 
-        // Inherit app icon
-        HICON hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(101));
+        // Use the plugin icon when one is available, otherwise inherit app icon.
+        HICON hIcon = nullptr;
+        if (!p->iconPath.empty()) {
+            hIcon = (HICON)LoadImageA(nullptr, p->iconPath.c_str(), IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE);
+        }
+        if (!hIcon) hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(101));
         if (hIcon) {
             SendMessage(mhwnd, WM_SETICON, ICON_BIG,   (LPARAM)hIcon);
             SendMessage(mhwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
@@ -215,6 +252,21 @@ static DWORD WINAPI ModalWindowThread(LPVOID param) {
             if (mhwnd) { ReleaseCapture(); SendMessage(mhwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0); }
 #endif
             return "";
+        });
+
+        // Give modal/plugin windows the same JS -> Python bridge as the main app.
+        modal.bind("invokeBridge", [](std::string req) -> std::string {
+            std::string payload = "";
+            if (req.length() > 2 && req.front() == '[' && req.back() == ']') {
+                payload = req.substr(1, req.length() - 2);
+            } else {
+                payload = req;
+            }
+
+            PyGILState_STATE gstate = PyGILState_Ensure();
+            std::string pyRes = CallPythonBackend(payload);
+            PyGILState_Release(gstate);
+            return pyRes;
         });
 
         modal.set_html(p->generatedHtml);
@@ -747,6 +799,13 @@ int main() {
         std::string titleInner  = ModalInner(src, "title");
         std::string windowTitle = ModalInner(titleInner, "value");
         if (windowTitle.empty()) windowTitle = modalName;
+        std::string modalIconPath;
+        if (modalName == "plugin") {
+            std::string payloadTitle = JsonStringAttr(g_modalPayload, "windowTitle");
+            std::string payloadIcon = JsonStringAttr(g_modalPayload, "windowIconPath");
+            if (!payloadTitle.empty()) windowTitle = payloadTitle;
+            modalIconPath = payloadIcon;
+        }
 
         // ── Parse <content> and <script> ────────────────────────────────────
         std::string contentHtml   = ModalInner(src, "content");
@@ -822,10 +881,11 @@ int main() {
         }
 
         // ── Spawn the modal on its own thread with its own message loop ───────
+        bool modalDevTools = devTools && modalName != "plugin";
         auto* params = new ModalThreadParams{
-            generatedHtml, windowTitle,
+            generatedHtml, windowTitle, modalIconPath,
             mWidth, mHeight, mCornerRadius,
-            useOsChrome, mCloseable, mFullscreen, mTransparent, devTools,
+            useOsChrome, mCloseable, mFullscreen, mTransparent, modalDevTools,
             &w
         };
         HANDLE hThread = CreateThread(nullptr, 0, ModalWindowThread, params, 0, nullptr);

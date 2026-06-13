@@ -28,6 +28,7 @@
   const state = {
     execution: { format: 'dgtexec', schema: 1, name: 'Untitled Execution', motionControlled: false, motionKeyMap: defaultMotionKeyMap(), timeline: [] },
     macros: { user: [], core: [] },
+    pinnedPluginIds: [],
     appInfo: null,
     playing: false,
     paused: false,
@@ -43,6 +44,7 @@
 
   let uid = 1;
   const newId = () => 'i' + (uid++);
+  const PINNED_PLUGINS_KEY = 'dgt_pinned_plugins';
 
   /* ───────────────────────── Action palette ───────────────────────── */
   // Source of truth is server/core/actions/*.dgtact, loaded at boot via loadActions().
@@ -230,8 +232,6 @@
     if (b) {
       b.classList.toggle('active', TL.snap);
       b.title = TL.snap ? 'Snapping on — click to disable' : 'Snapping off — click to enable';
-      const ico = b.querySelector('.material-symbols-outlined');
-      if (ico) ico.textContent = TL.snap ? 'grid_on' : 'grid_off';
     }
     toast('info', TL.snap ? 'Snapping enabled.' : 'Snapping disabled.');
   }
@@ -770,15 +770,23 @@
   /* ───────────────────────── Param modal ───────────────────────── */
   function openParamModal(ctx) {
     state.modalCtx = ctx;
-    document.querySelector('#modal .modal-card')?.classList.toggle('wide', ctx.editor === 'controllerAxis');
+    document.querySelector('#modal .modal-card')?.classList.toggle('wide', ctx.editor === 'controllerAxis' || ctx.customWide);
     document.getElementById('modalTitle').textContent = ctx.title;
     document.getElementById('modalIcon').textContent = ctx.icon || 'tune';
     document.getElementById('modalOk').textContent = ctx.okLabel || 'OK';
     const body = document.getElementById('modalBody');
     body.innerHTML = '';
+    document.getElementById('modalOk').style.display = '';
 
     if (ctx.editor === 'controllerAxis') {
       renderControllerAxisEditor(ctx.values || {});
+      document.getElementById('modal').classList.add('show');
+      return;
+    }
+    if (typeof ctx.render === 'function') {
+      ctx.render(body);
+      document.getElementById('modalOk').style.display = ctx.hideOk ? 'none' : '';
+      document.getElementById('modalFoot').style.display = ctx.hideFoot ? 'none' : '';
       document.getElementById('modal').classList.add('show');
       return;
     }
@@ -826,7 +834,11 @@
              <input type="hidden" id="f_${f.k}" value="${cur ?? ''}">
            </div>`;
       } else if (f.type === 'select') {
-        control = `<select id="f_${f.k}">${f.options.map(o=>`<option value="${o}" ${cur===o?'selected':''}>${o}</option>`).join('')}</select>`;
+        control = `<select id="f_${f.k}">${f.options.map(o=>{
+          const value = typeof o === 'object' ? o.value : o;
+          const label = typeof o === 'object' ? (o.label || o.value) : o;
+          return `<option value="${escapeHtml(value)}" ${cur===value?'selected':''}>${escapeHtml(label)}</option>`;
+        }).join('')}</select>`;
       } else {
         const step = f.step ? `step="${f.step}"` : '';
         control = `<input id="f_${f.k}" type="${f.type}" ${step} value="${cur ?? ''}">`;
@@ -930,18 +942,8 @@
     document.addEventListener('keyup', onUp, true);
   }
 
-  // Open a live overlay so the user can pick coordinates by drawing. Prefers the
-  // native full-screen overlay window (covers the whole screen, over the game);
-  // falls back to an in-page overlay (covers the app window) when the desktop
-  // engine's openModal binding isn't available — so the picker always works.
   async function pickOnScreen(pick) {
-    let res = null;
-    if (window.openModal) {
-      try { res = await openModal('overlay', { mode: pick.mode }); }
-      catch (e) { res = null; }
-    } else {
-      res = await inPagePick(pick.mode);
-    }
+    const res = await inPagePick(pick.mode);
     if (!res || typeof res !== 'object') return;   // cancelled
     Object.keys(res).forEach(rk => {
       const num = document.getElementById('f_' + rk);
@@ -1006,23 +1008,7 @@
     }
   }
 
-  function controllerSupportPromptMessage(verb) {
-    return `${verb || 'Reinstall'} Controller Axis support?\n\n` +
-      `DigiTek Lab needs two pieces for Controller Axis playback:\n\n` +
-      `vgamepad: a Python package that lets DigiTek Lab create and control a virtual Xbox controller.\n\n` +
-      `ViGEmBus: a Windows driver from Nefarius that exposes that virtual controller to games like a real USB gamepad.\n\n` +
-      `After this is installed, Windows may play the same sound it uses when a USB device connects whenever DigiTek Lab opens. That is normal: the virtual controller driver is creating a controller device for games to see.\n\n` +
-      `Windows may show a driver installer or administrator prompt.`;
-  }
-
   async function reinstallControllerSupportFlow() {
-    const ok = await nativeConfirm({
-      title:'Reinstall Controller Support',
-      tbLabel:'Controller Support',
-      message: controllerSupportPromptMessage('Reinstall'),
-      confirmLabel:'Reinstall drivers',
-    });
-    if (!ok) return false;
     return await runControllerSupportJob('reinstall');
   }
 
@@ -1366,8 +1352,20 @@
   function closeAppModal() {
     if (state.axisRecTimer) { clearInterval(state.axisRecTimer); state.axisRecTimer = null; }
     document.querySelector('#modal .modal-card')?.classList.remove('wide');
+    document.getElementById('modalOk').style.display = '';
     document.getElementById('modal').classList.remove('show');
     state.modalCtx = null;
+  }
+
+  function bindModalCancelOnce(onCancel) {
+    let done = false;
+    const cancel = () => {
+      if (done) return;
+      done = true;
+      onCancel();
+    };
+    document.querySelector('#modal .x')?.addEventListener('click', cancel, { once:true });
+    document.querySelector('#modal .modal-foot .ghost')?.addEventListener('click', cancel, { once:true });
   }
 
   // Simple text prompt built on the same modal
@@ -1379,12 +1377,7 @@
         values:{ value: value || '' },
         onOk: (v) => resolve((v.value || '').trim()),
       });
-      // Resolve null if cancelled
-      const card = document.querySelector('#modal .x');
-      const ghost = document.querySelector('#modal .modal-foot .ghost');
-      const cancel = () => resolve(null);
-      card.addEventListener('click', cancel, { once:true });
-      ghost.addEventListener('click', cancel, { once:true });
+      bindModalCancelOnce(() => resolve(null));
     });
   }
 
@@ -1473,30 +1466,47 @@
     toast('ok', 'Motion Controlled key map saved.');
   }
 
-  /* ── Native ESDK modal wrappers (fall back to the in-page modal in a browser) ── */
   async function nativeConfirm(opts) {
-    if (!window.openModal) return confirm(opts.message || opts.title || 'Are you sure?');
-    const r = await openModal('confirm', opts);
-    return r === true;
+    opts = opts || {};
+    return new Promise(resolve => {
+      openParamModal({
+        title: opts.title || 'Confirm',
+        icon: opts.danger ? 'warning' : (opts.icon || 'help'),
+        hideOk: true,
+        hideFoot: true,
+        render: (body) => {
+          const wrap = document.createElement('div');
+          wrap.className = 'dom-confirm';
+          wrap.innerHTML = `<p>${escapeHtml(opts.message || 'Are you sure?')}</p>`;
+          const actions = document.createElement('div');
+          actions.className = 'dom-modal-actions';
+          actions.innerHTML = `
+            <button type="button" class="GTextBtn ghost" data-action="cancel">Cancel</button>
+            <button type="button" class="GTextBtn ${opts.danger ? 'danger' : 'primary'}" data-action="ok">${escapeHtml(opts.confirmLabel || 'OK')}</button>
+          `;
+          wrap.appendChild(actions);
+          body.appendChild(wrap);
+          actions.querySelector('[data-action="cancel"]').onclick = () => { closeAppModal(); resolve(false); };
+          actions.querySelector('[data-action="ok"]').onclick = () => { closeAppModal(); resolve(true); };
+        },
+      });
+      bindModalCancelOnce(() => resolve(false));
+    });
   }
   async function nativePrompt(opts) {
-    if (!window.openModal) return promptModal(opts.title, opts.message || '', opts.default || '', opts.confirmLabel);
-    const r = await openModal('prompt', opts);
-    return r == null ? null : String(r).trim();
+    return promptModal(opts.title, opts.message || '', opts.default || '', opts.confirmLabel);
   }
   async function nativePick(opts) {
-    if (!window.openModal) {
-      return new Promise(resolve => {
-        openParamModal({
-          title: opts.title, icon:'folder_open', okLabel: opts.confirmLabel || 'OK',
-          fields:[ {k:'value', label: opts.message || 'Select', type:'select',
-                    options:(opts.options||[]).map(o => typeof o === 'object' ? o.value : o)} ],
-          values:{ value: (opts.options && opts.options[0]) ? (typeof opts.options[0]==='object'?opts.options[0].value:opts.options[0]) : '' },
-          onOk: (v) => resolve(v.value || null),
-        });
+    return new Promise(resolve => {
+      openParamModal({
+        title: opts.title, icon:'folder_open', okLabel: opts.confirmLabel || 'OK',
+        fields:[ {k:'value', label: opts.message || 'Select', type:'select',
+                  options:(opts.options||[]).map(o => typeof o === 'object' ? { value:o.value, label:o.label || o.value } : o)} ],
+        values:{ value: (opts.options && opts.options[0]) ? (typeof opts.options[0]==='object'?opts.options[0].value:opts.options[0]) : '' },
+        onOk: (v) => resolve(v.value || null),
       });
-    }
-    return await openModal('picker', opts);
+      bindModalCancelOnce(() => resolve(null));
+    });
   }
 
   /* ───────────────────────── Record flow ───────────────────────── */
@@ -1833,6 +1843,496 @@
     catch (e) { toast('err', e.message); }
   }
 
+  /* ───────────────────────── Themes ───────────────────────── */
+  function applyTheme(theme) {
+    const style = document.getElementById('activeThemeStyle');
+    if (style) style.textContent = (theme && theme.css) || '';
+    document.documentElement.dataset.theme = (theme && theme.id) || 'default';
+  }
+
+  async function loadActiveTheme() {
+    try { applyTheme(await bridge({ action:'dgt_active_theme' })); }
+    catch (_e) { applyTheme(null); }
+  }
+
+  async function onImportTheme() {
+    try {
+      const r = await bridge({ action:'dgt_import_theme' });
+      if (r.cancelled) return;
+      await loadActiveTheme();
+      toast('ok', `Imported theme “${r.name}”.`);
+      openThemeManager();
+    } catch (e) { toast('err', e.message); }
+  }
+
+  async function openThemeManager() {
+    let themes = [];
+    let active = {};
+    try {
+      themes = await bridge({ action:'dgt_list_themes' });
+      active = await bridge({ action:'dgt_active_theme' });
+    } catch (e) { return toast('err', e.message); }
+    const activeId = active.id || '';
+    const rows = [{ id:'', name:'Default', description:'Use DigiTek Lab built-in styling.', builtin:true, active:!activeId }].concat(themes);
+    openParamModal({
+      title:'Manage Themes', icon:'palette', hideOk:true, customWide:true,
+      render: (body) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'plugin-manager';
+        wrap.innerHTML = rows.map(t => `
+          <div class="plugin-card">
+            <div class="plugin-card-icon"><span class="material-symbols-outlined">${t.active || t.id === activeId ? 'radio_button_checked' : 'palette'}</span></div>
+            <div>
+              <div class="plugin-name">${escapeHtml(t.name || t.id)}</div>
+              <div class="plugin-meta">${escapeHtml([t.builtin ? 'Built in' : 'Installed theme', t.description || ''].filter(Boolean).join(' · '))}</div>
+            </div>
+            <div class="plugin-actions">
+              <button class="al-mini ${t.active || t.id === activeId ? 'success' : ''}" title="Apply theme" onclick="setTheme('${escapeHtml(t.id)}')"><span class="material-symbols-outlined">check</span></button>
+              ${t.builtin ? '' : `<button class="al-mini danger" title="Remove theme" onclick="removeTheme('${escapeHtml(t.id)}', decodeURIComponent('${encodeURIComponent(t.name || t.id)}'))"><span class="material-symbols-outlined">delete</span></button>`}
+            </div>
+          </div>
+        `).join('');
+        body.appendChild(wrap);
+      },
+    });
+  }
+
+  async function setTheme(themeId) {
+    try {
+      const theme = await bridge({ action:'dgt_set_theme', themeId });
+      applyTheme(theme);
+      toast('ok', theme.id ? `Applied “${theme.name}”.` : 'Applied default theme.');
+      openThemeManager();
+    } catch (e) { toast('err', e.message); }
+  }
+
+  async function removeTheme(themeId, name) {
+    const ok = await nativeConfirm({
+      title:'Remove theme?', tbLabel:'Remove Theme',
+      message:`“${name}” will be removed from DigiTek Lab.`,
+      confirmLabel:'Remove', danger:true,
+    });
+    if (!ok) return;
+    try {
+      await bridge({ action:'dgt_remove_theme', themeId });
+      await loadActiveTheme();
+      toast('ok', 'Theme removed.');
+      openThemeManager();
+    } catch (e) { toast('err', e.message); }
+  }
+
+  /* ───────────────────────── Plugins ───────────────────────── */
+  async function onImportPlugin() {
+    const progress = openPluginInstallProgress('Importing Plugin', 'Waiting for file selection...');
+    try {
+      progress.set(18, 'Selecting plugin package...');
+      const r = await bridge({ action:'dgt_import_plugin' });
+      progress.done();
+      if (r.cancelled) return;
+      toast('ok', `Imported plugin “${r.name}”.`);
+      refreshPinnedPlugins();
+      openPluginManager();
+    } catch (e) {
+      progress.fail(e.message);
+      toast('err', e.message);
+    }
+  }
+
+  async function openPluginsFolder() {
+    try {
+      const r = await bridge({ action:'dgt_open_plugins_folder' });
+      toast('ok', `Opened plugins folder: ${r.path}`);
+    } catch (e) { toast('err', e.message); }
+  }
+
+  async function openPluginManager() {
+    let plugins = [];
+    let updates = {};
+    try { plugins = await bridge({ action:'dgt_list_plugins' }); }
+    catch (e) { return toast('err', e.message); }
+    try { updates = await bridge({ action:'dgt_plugin_update_status' }); }
+    catch (_e) { updates = {}; }
+    const pinned = new Set(await fetchPinnedPluginIds());
+    openParamModal({
+      title:'Manage Plugins', icon:'extension', hideOk:true, customWide:true,
+      render: (body) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'plugin-manager';
+        if (!plugins.length) {
+          wrap.innerHTML = '<div class="plugin-empty">No plugins installed yet.</div>';
+        } else {
+          wrap.innerHTML = plugins.map(p => `
+            <div class="plugin-card">
+              <div class="plugin-card-icon">${pluginIconHtml(p)}</div>
+              <div>
+                <div class="plugin-name">${escapeHtml(p.name || p.id)}</div>
+                <div class="plugin-meta">${escapeHtml(pluginMetaText(p, updates[p.id]))}</div>
+              </div>
+              <div class="plugin-actions">
+                <button class="al-mini ${pinned.has(p.id) ? 'success' : ''}" title="${pinned.has(p.id) ? 'Unpin from toolbar' : 'Pin to toolbar'}" onclick="togglePluginPin('${escapeHtml(p.id)}')"><span class="material-symbols-outlined">${pinned.has(p.id) ? 'keep_off' : 'keep'}</span></button>
+                ${updates[p.id] && updates[p.id].updateAvailable ? `<button class="al-mini success" title="Update plugin" onclick="updateInstalledPlugin('${escapeHtml(p.id)}', 'manager')"><span class="material-symbols-outlined">upgrade</span></button>` : ''}
+                <button class="al-mini" title="Open plugin" onclick="openInstalledPlugin('${escapeHtml(p.id)}')"><span class="material-symbols-outlined">open_in_new</span></button>
+                <button class="al-mini danger" title="Remove plugin" onclick="removeInstalledPlugin('${escapeHtml(p.id)}', decodeURIComponent('${encodeURIComponent(p.name || p.id)}'), 'manager')"><span class="material-symbols-outlined">delete</span></button>
+              </div>
+            </div>`).join('');
+        }
+        body.appendChild(wrap);
+      },
+    });
+  }
+
+  async function openPluginMarketplace(refreshed) {
+    let plugins = [];
+    try { plugins = await bridge({ action:'dgt_marketplace_plugins' }); }
+    catch (e) { return toast('err', e.message); }
+    if (refreshed) toast('ok', 'Plugin marketplace refreshed.');
+    openParamModal({
+      title:'Plugin Marketplace', icon:'storefront', hideOk:true, customWide:true,
+      render: (body) => {
+        const shell = document.createElement('div');
+        shell.className = 'plugin-marketplace-shell';
+        const header = document.createElement('div');
+        header.className = 'plugin-marketplace-tools';
+        header.innerHTML = `
+          <div class="plugin-marketplace-count">${plugins.length} plugin${plugins.length === 1 ? '' : 's'}</div>
+          <button class="al-mini" title="Refresh marketplace" onclick="openPluginMarketplace(true)">
+            <span class="material-symbols-outlined">refresh</span>
+          </button>`;
+        const wrap = document.createElement('div');
+        wrap.className = 'plugin-manager';
+        if (!plugins.length) {
+          wrap.innerHTML = '<div class="plugin-empty">Marketplace is empty.</div>';
+        } else {
+          wrap.innerHTML = plugins.map(p => `
+            <div class="plugin-card">
+              <div class="plugin-card-icon"><span class="material-symbols-outlined">extension</span></div>
+              <div>
+                <div class="plugin-name">${escapeHtml(p.name || p.id)}</div>
+                <div class="plugin-meta">${escapeHtml(marketplaceMetaText(p))}</div>
+              </div>
+              <div class="plugin-actions">
+                <button class="GTextBtn ${p.installed && !p.updateAvailable ? 'danger' : 'primary'}" onclick="${p.updateAvailable ? 'updateInstalledPlugin' : p.installed ? 'removeInstalledPlugin' : 'installMarketplacePlugin'}('${escapeHtml(p.id)}'${p.updateAvailable ? ", 'marketplace'" : p.installed ? `, decodeURIComponent('${encodeURIComponent(p.name || p.id)}'), 'marketplace'` : ''})">
+                  <span class="material-symbols-outlined">${p.updateAvailable ? 'upgrade' : p.installed ? 'delete' : 'download'}</span>${p.updateAvailable ? 'Update' : p.installed ? 'Uninstall' : 'Install'}
+                </button>
+              </div>
+            </div>`).join('');
+        }
+        shell.appendChild(header);
+        shell.appendChild(wrap);
+        body.appendChild(shell);
+      },
+    });
+  }
+
+  async function installMarketplacePlugin(pluginId) {
+    const progress = openPluginInstallProgress('Installing Plugin', 'Downloading plugin package...');
+    try {
+      progress.set(24, 'Downloading plugin package...');
+      const r = await bridge({ action:'dgt_install_marketplace_plugin', pluginId });
+      progress.done('Plugin installed.');
+      toast('ok', `Installed “${r.name}”.`);
+      await refreshPinnedPlugins();
+      openPluginMarketplace();
+    } catch (e) {
+      progress.fail(e.message);
+      toast('err', e.message);
+    }
+  }
+
+  async function updateInstalledPlugin(pluginId, refreshView) {
+    const progress = openPluginInstallProgress('Updating Plugin', 'Downloading latest plugin package...');
+    try {
+      progress.set(24, 'Downloading latest plugin package...');
+      const r = await bridge({ action:'dgt_update_plugin', pluginId });
+      progress.done('Plugin updated.');
+      toast('ok', `Updated “${r.name}” to v${r.version}.`);
+      await refreshPinnedPlugins();
+      if (refreshView === 'marketplace') openPluginMarketplace();
+      else if (refreshView !== false) openPluginManager();
+    } catch (e) {
+      progress.fail(e.message);
+      toast('err', e.message);
+    }
+  }
+
+  function openPluginInstallProgress(title, message) {
+    let pct = 8;
+    let stopped = false;
+    openParamModal({
+      title, icon:'download', hideOk:true, customWide:false,
+      render: (body) => {
+        body.innerHTML = `
+          <div class="plugin-install-progress">
+            <div class="support-phase">
+              <span id="pluginInstallPhase">${escapeHtml(message || 'Preparing...')}</span>
+            </div>
+            <div class="support-progress"><div class="support-progress-fill" id="pluginInstallFill" style="width:${pct}%"></div></div>
+          </div>`;
+      },
+    });
+    const update = (value, text, detail) => {
+      pct = Math.max(0, Math.min(100, Math.round(value)));
+      const fill = document.getElementById('pluginInstallFill');
+      const phase = document.getElementById('pluginInstallPhase');
+      if (fill) fill.style.width = pct + '%';
+      if (phase && text) phase.textContent = text;
+    };
+    const timer = setInterval(() => {
+      if (stopped) return;
+      const next = pct < 38 ? pct + 4 : pct < 74 ? pct + 2 : pct < 92 ? pct + 1 : pct;
+      const label = next < 36 ? 'Downloading plugin package...' : next < 72 ? 'Checking Python and requirements...' : 'Installing required packages...';
+      update(next, label);
+    }, 420);
+    return {
+      set: update,
+      done(text) {
+        stopped = true;
+        clearInterval(timer);
+        update(100, text || 'Complete.', 'Finished.');
+        setTimeout(() => closeAppModal(), 450);
+      },
+      fail(text) {
+        stopped = true;
+        clearInterval(timer);
+        update(100, 'Installation failed.', text || 'Unable to install plugin.');
+      },
+    };
+  }
+
+  function pluginMetaText(plugin, update) {
+    const base = [plugin.version ? 'v' + plugin.version : '', plugin.author || '', plugin.description || ''].filter(Boolean);
+    if (update && update.updateAvailable) base.unshift(`Update available: v${update.latestVersion}`);
+    return base.join(' · ');
+  }
+
+  function marketplaceMetaText(plugin) {
+    const base = [plugin.version ? 'v' + plugin.version : '', plugin.author || '', plugin.category || plugin.topic || '', plugin.description || ''].filter(Boolean);
+    if (plugin.updateAvailable) base.unshift(`Installed v${plugin.installedVersion}`);
+    return base.join(' · ');
+  }
+
+  async function removeInstalledPlugin(pluginId, name, refreshView) {
+    const ok = await nativeConfirm({
+      title:'Remove plugin?', tbLabel:'Remove Plugin',
+      message:`“${name}” will be removed from DigiTek Lab. You can import it again later.`,
+      confirmLabel:'Remove', danger:true,
+    });
+    if (!ok) return;
+    try {
+      await bridge({ action:'dgt_remove_plugin', pluginId });
+      await refreshPinnedPlugins();
+      toast('ok', 'Plugin removed.');
+      if (refreshView === 'marketplace') openPluginMarketplace();
+      else if (refreshView !== false) openPluginManager();
+    } catch (e) { toast('err', e.message); }
+  }
+
+  function normalizePinnedPluginIds(ids) {
+    const seen = new Set();
+    return (ids || []).map(id => String(id || '').trim().toLowerCase()).filter(id => {
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }
+
+  function loadPinnedPluginIds() {
+    try {
+      const raw = localStorage.getItem(PINNED_PLUGINS_KEY);
+      const ids = JSON.parse(raw || '[]');
+      state.pinnedPluginIds = Array.isArray(ids) ? normalizePinnedPluginIds(ids) : [];
+    } catch (_e) {
+      state.pinnedPluginIds = [];
+    }
+    return state.pinnedPluginIds;
+  }
+
+  async function fetchPinnedPluginIds() {
+    try {
+      const ids = await bridge({ action:'dgt_get_pinned_plugins' });
+      state.pinnedPluginIds = normalizePinnedPluginIds(ids);
+      try { localStorage.setItem(PINNED_PLUGINS_KEY, JSON.stringify(state.pinnedPluginIds)); } catch (_e) {}
+      return state.pinnedPluginIds;
+    } catch (_e) {
+      return loadPinnedPluginIds();
+    }
+  }
+
+  async function savePinnedPluginIds(ids) {
+    state.pinnedPluginIds = normalizePinnedPluginIds(ids);
+    try { localStorage.setItem(PINNED_PLUGINS_KEY, JSON.stringify(state.pinnedPluginIds)); } catch (_e) {}
+    try { state.pinnedPluginIds = normalizePinnedPluginIds(await bridge({ action:'dgt_set_pinned_plugins', pluginIds: state.pinnedPluginIds })); }
+    catch (_e) {}
+    return state.pinnedPluginIds;
+  }
+
+  async function unpinPluginId(pluginId) {
+    const id = String(pluginId || '');
+    await savePinnedPluginIds((await fetchPinnedPluginIds()).filter(p => p !== id));
+  }
+
+  async function togglePluginPin(pluginId) {
+    const id = String(pluginId || '').trim().toLowerCase();
+    if (!id) return;
+    const ids = await fetchPinnedPluginIds();
+    if (ids.includes(id)) {
+      await savePinnedPluginIds(ids.filter(p => p !== id));
+      toast('ok', 'Plugin unpinned.');
+    } else {
+      await savePinnedPluginIds(ids.concat(id));
+      toast('ok', 'Plugin pinned to toolbar.');
+    }
+    await refreshPinnedPlugins();
+    openPluginManager();
+  }
+
+  function pluginIconHtml(plugin) {
+    if (plugin && plugin.iconDataUri) {
+      return `<img src="${escapeHtml(plugin.iconDataUri)}" alt="">`;
+    }
+    return '<span class="material-symbols-outlined">extension</span>';
+  }
+
+  async function refreshPinnedPlugins() {
+    const wrap = document.getElementById('pinnedPlugins');
+    const divider = document.getElementById('pluginPinDivider');
+    if (!wrap) return;
+    const ids = await fetchPinnedPluginIds();
+    if (!ids.length) {
+      wrap.innerHTML = '';
+      if (divider) divider.hidden = true;
+      return;
+    }
+    let plugins = [];
+    try { plugins = await bridge({ action:'dgt_list_plugins' }); }
+    catch (_e) {
+      wrap.innerHTML = '';
+      if (divider) divider.hidden = true;
+      return;
+    }
+    const byId = new Map(plugins.map(p => [p.id, p]));
+    const validIds = ids.filter(id => byId.has(id));
+    const pinned = validIds.map(id => byId.get(id));
+    wrap.innerHTML = pinned.map(p => `
+      <button class="ToolBtn plugin-pin" title="${escapeHtml(p.name || p.id)}" onclick="openInstalledPlugin('${escapeHtml(p.id)}')">
+        ${pluginIconHtml(p)}
+      </button>
+    `).join('');
+    if (divider) divider.hidden = !pinned.length;
+  }
+
+  async function openInstalledPlugin(pluginId) {
+    const canOpen = await promptPluginUpdateIfNeeded(pluginId);
+    if (!canOpen) return;
+    let loaded;
+    try {
+      await bridge({ action:'dgt_clear_plugin_cache', pluginId });
+      loaded = await bridge({ action:'dgt_load_plugin_ui', pluginId });
+    }
+    catch (e) { return toast('err', e.message); }
+    const plugin = loaded.plugin || { id:pluginId, name:pluginId };
+    plugin.cacheBust = loaded.cacheBust || Date.now();
+    if (openNativePluginWindow(plugin, loaded.html || '')) return;
+    openPluginPopupFallback(plugin, loaded.html || '');
+  }
+
+  async function promptPluginUpdateIfNeeded(pluginId) {
+    let status = null;
+    try { status = await bridge({ action:'dgt_plugin_update_status', pluginId }); }
+    catch (_e) { return true; }
+    if (!status || !status.updateAvailable) return true;
+    const ok = await nativeConfirm({
+      title:'Plugin update available',
+      tbLabel:'Update Plugin',
+      message:`${status.name || pluginId} has an update available (${status.installedVersion || 'installed'} -> ${status.latestVersion}). Update before opening?`,
+      confirmLabel:'Update',
+    });
+    if (!ok) return true;
+    try {
+      const r = await bridge({ action:'dgt_update_plugin', pluginId });
+      toast('ok', `Updated “${r.name}” to v${r.version}.`);
+      await refreshPinnedPlugins();
+      return true;
+    } catch (e) {
+      toast('err', e.message);
+      return false;
+    }
+  }
+
+  function openNativePluginWindow(plugin, html) {
+    const payload = {
+      pluginId: plugin.id,
+      plugin,
+      windowTitle: plugin.name || plugin.id || 'Plugin',
+      windowIconPath: plugin.iconPath || '',
+      cacheBust: plugin.cacheBust || Date.now(),
+      htmlBase64: encodePluginHtml(html),
+    };
+    if (typeof window._openModalSetPayload === 'function' && typeof window._openModalNative === 'function') {
+      window._openModalSetPayload(payload);
+      window._openModalNative('plugin');
+      return true;
+    }
+    return false;
+  }
+
+  function encodePluginHtml(html) {
+    return btoa(unescape(encodeURIComponent(html || '')));
+  }
+
+  function openPluginPopupFallback(plugin, html) {
+    const popup = window.open('', 'dgt_plugin_' + plugin.id, 'width=385,height=536,resizable=no,scrollbars=no');
+    if (!popup) {
+      toast('err', 'Plugin window was blocked by the browser.');
+      return;
+    }
+    popup.document.open();
+    popup.document.write(injectPluginPopupBridge(html, plugin.id));
+    popup.document.close();
+    popup.document.title = plugin.name || plugin.id;
+  }
+
+  function injectPluginPopupBridge(html, pluginId) {
+    const boot = `<script>
+      document.addEventListener('contextmenu', event => event.preventDefault());
+      document.addEventListener('keydown', event => {
+        const key = String(event.key || '').toLowerCase();
+        const blocked = key === 'f12' || (event.ctrlKey && event.shiftKey && ['i', 'j', 'c'].includes(key));
+        if (blocked) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }, true);
+      window.DIGITEK_PLUGIN_ID = ${JSON.stringify(pluginId)};
+      window.pluginInvoke = function(payload) {
+        if (!window.opener || !window.opener.__dgtPluginBridge) {
+          return Promise.reject(new Error('DigiTek plugin bridge is unavailable.'));
+        }
+        return window.opener.__dgtPluginBridge(${JSON.stringify(pluginId)}, payload || {});
+      };
+    <\/script>`;
+    return /<head[^>]*>/i.test(html)
+      ? html.replace(/<head[^>]*>/i, m => m + boot)
+      : boot + html;
+  }
+
+  window.__dgtPluginBridge = async function(pluginId, payload) {
+    const result = await bridge({ action:'dgt_plugin_call', pluginId, payload });
+    return unwrapPluginResult(result);
+  };
+
+  function unwrapPluginResult(result) {
+    if (typeof result !== 'string') return result;
+    try {
+      const parsed = JSON.parse(result);
+      if (parsed && parsed.status === 'error') throw new Error(parsed.reason || 'Plugin backend error');
+      if (parsed && parsed.status === 'ok') return parsed.result;
+    } catch (err) {
+      if (err && err.message !== result) throw err;
+    }
+    return result;
+  }
+
   /* ───────────────────────── Toast ───────────────────────── */
   function toast(kind, text) {
     const wrap = document.getElementById('toastWrap');
@@ -1844,92 +2344,28 @@
     setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; setTimeout(()=>el.remove(), 250); }, 3200);
   }
 
-  /* ───────────────────────── Spotlight tutorial ───────────────────────── */
-  const TOUR_STEPS = [
-    { sel:'#playBtn', icon:'play_arrow', title:'Play & pause',
-      body:'Run your execution here. During the countdown switch to Roblox — playback sends real keyboard & mouse input to the game. Press F9 in-game to stop.' },
-    { sel:'#recordBtn', icon:'fiber_manual_record', title:'Record a macro',
-      body:'Capture your own keyboard/mouse moves into a reusable macro. A countdown lets you switch to Roblox first; press F8 in-game to stop recording.' },
-    { sel:'#fileOpsGroup', icon:'folder_open', title:'Manage executions',
-      body:'Start a new shot, then save, open, or export your execution to a file to share or reuse it later.' },
-    { sel:'#menuSettingsBtn', icon:'control_camera', title:'Motion control',
-      body:'Open Settings to toggle Motion Control. When on, the execution plays backward once it finishes — retracing the camera and any controller axis inputs to their starting positions so you can re-run the exact same move, e.g. to film a clean plate.' },
-    { sel:'#tlxScroll', icon:'view_timeline', title:'The timeline',
-      body:'A multi-track timeline that plays left → right. Drop clips onto layers to run them in parallel, drag a clip to move it in time or to another layer, and drag its edges to trim or extend its duration.' },
-    { sel:'#actionListBody', icon:'add_box', title:'Action list',
-      body:'Click or drag actions, your saved macros, and the core engine macros from here onto the timeline to build your shot.' },
-  ];
-
-  const tour = { steps: [], i: 0, active: false };
-
-  function startTour(steps) {
-    tour.steps = Array.isArray(steps) ? steps : TOUR_STEPS;
-    tour.i = 0; tour.active = true;
-    document.getElementById('tourBlock').style.display = 'block';
-    showTourStep();
+  function openTutorial() {
+    openParamModal({
+      title:'Tutorial', icon:'smart_display', hideOk:true, customWide:true,
+      render: (body) => {
+        const video = document.createElement('video');
+        video.className = 'tutorial-video';
+        video.controls = true;
+        video.preload = 'metadata';
+        video.src = '../assets/tutorial.mp4';
+        video.onerror = () => {
+          body.innerHTML = '<div class="tutorial-missing">Tutorial video not found.<br>Place it at <code>ui/assets/tutorial.mp4</code>.</div>';
+        };
+        body.appendChild(video);
+      },
+    });
   }
 
-  function showTourStep() {
-    const step = tour.steps[tour.i];
-    const el = step && document.querySelector(step.sel);
-    if (!el) { // skip missing targets gracefully
-      if (tour.i >= tour.steps.length - 1) return endTour(true);
-      tour.i++; return showTourStep();
-    }
-    const r = el.getBoundingClientRect();
-    const pad = 8;
-    const hole = document.getElementById('tourHole');
-    hole.style.display = 'block';
-    hole.style.left = (r.left - pad) + 'px';
-    hole.style.top = (r.top - pad) + 'px';
-    hole.style.width = (r.width + pad * 2) + 'px';
-    hole.style.height = (r.height + pad * 2) + 'px';
-
-    document.getElementById('tourIcon').textContent = step.icon || 'tips_and_updates';
-    document.getElementById('tourTitle').textContent = step.title;
-    document.getElementById('tourBody').textContent = step.body;
-    document.getElementById('tourCount').textContent = (tour.i + 1) + ' / ' + tour.steps.length;
-    document.getElementById('tourBack').style.visibility = tour.i === 0 ? 'hidden' : 'visible';
-    document.getElementById('tourNext').textContent = tour.i === tour.steps.length - 1 ? 'Done' : 'Next';
-
-    const tip = document.getElementById('tourTip');
-    tip.style.display = 'block';
-    // Position below the target if there's room, else above; clamp to viewport.
-    const tw = tip.offsetWidth, th = tip.offsetHeight, m = 14;
-    let top = r.bottom + m;
-    if (top + th > window.innerHeight - 10) top = r.top - th - m;
-    if (top < 10) top = 10;
-    let left = r.left + r.width / 2 - tw / 2;
-    left = Math.max(10, Math.min(left, window.innerWidth - tw - 10));
-    tip.style.top = top + 'px';
-    tip.style.left = left + 'px';
-  }
-
-  function nextTourStep() {
-    if (tour.i >= tour.steps.length - 1) return endTour(true);
-    tour.i++; showTourStep();
-  }
-  function prevTourStep() { if (tour.i > 0) { tour.i--; showTourStep(); } }
-
-  function endTour(markDone) {
-    tour.active = false;
-    document.getElementById('tourBlock').style.display = 'none';
-    document.getElementById('tourHole').style.display = 'none';
-    document.getElementById('tourTip').style.display = 'none';
-    if (markDone) { try { localStorage.setItem('dgt_tour_done', '1'); } catch (e) {} }
-  }
-
-  // Keep the spotlight aligned if the window resizes mid-tour.
-  window.addEventListener('resize', () => { if (tour.active) showTourStep(); renderTimeline(); });
-
-  function maybeStartFirstRunTour() {
-    let done = false;
-    try { done = localStorage.getItem('dgt_tour_done') === '1'; } catch (e) {}
-    if (!done) setTimeout(() => startTour(), 600); // let layout settle first
-  }
+  window.addEventListener('resize', () => { renderTimeline(); });
 
   /* ───────────────────────── Boot ───────────────────────── */
   async function boot() {
+    await loadActiveTheme();
     setExecNameLabel(state.execution.name);
     syncMotionBtn();
     render();
@@ -1950,14 +2386,14 @@
     }
     await loadActions();
     await refreshMacros();
-    maybeStartFirstRunTour();
+    await refreshPinnedPlugins();
   }
 
   // Keep the track-head column and ruler aligned while scrolling the lanes.
   document.getElementById('tlxScroll')?.addEventListener('scroll', syncTimelineScroll);
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { if (tour.active) endTour(false); else closeAppModal(); return; }
+    if (e.key === 'Escape') { closeAppModal(); return; }
     const tag = (e.target.tagName || '').toLowerCase();
     const typing = tag === 'input' || tag === 'textarea' || tag === 'select';
     // Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z) → undo / redo.
@@ -1989,5 +2425,19 @@
       zoomTimeline(e.deltaY < 0 ? 1 : -1);
     }, { passive: false });
   })();
+
+  Object.assign(window, {
+    addLayer, addMotionMapRow,
+    clearKeys, closeAppModal, deleteMacro, deleteSelectedClip, exportMacro, finishRecording,
+    focusAdjacentClip, installMarketplacePlugin,
+    onDeleteExecution, onExportExecution, onImportMacro, onImportPlugin, onMotionToggle,
+    onModalOk, onNewExecution, onOpenExecution, onPlayPause, onRecord, onSaveExecution, onStop,
+    openInstalledPlugin, openMotionSettings, openPluginManager, openPluginMarketplace,
+    openPluginsFolder, openThemeManager, openTutorial, pickSeg, redo, removeInstalledPlugin,
+    removeMotionMapRow, removeTheme, resetMotionMapDefaults, saveMotionSettings,
+    setTheme, startKeyRecord, syncCoord, toggleContinuous, togglePluginPin,
+    toggleControllerSupportLog, toggleSnap, uninstallControllerSupportFlow, updateInstalledPlugin,
+    undo, zoomTimeline,
+  });
 
   window.addEventListener('DOMContentLoaded', boot);

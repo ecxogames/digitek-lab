@@ -10,6 +10,8 @@ from tkinter import filedialog
 
 _MACRO_TYPES = [("DigiTek Macro", "*.dgtmcr"), ("All files", "*.*")]
 _EXEC_TYPES = [("DigiTek Execution", "*.dgtexec"), ("All files", "*.*")]
+_PLUGIN_TYPES = [("DigiTek Plugin", "*.dgtkplgn"), ("All files", "*.*")]
+_THEME_TYPES = [("DigiTek Theme", "*.theme"), ("CSS Theme", "*.css"), ("All files", "*.*")]
 
 
 def _root():
@@ -21,13 +23,13 @@ def _root():
 
 def save_as(default_name, kind="macro"):
     """Ask where to export. Returns the chosen path, or None if cancelled."""
-    types = _MACRO_TYPES if kind == "macro" else _EXEC_TYPES
-    ext = ".dgtmcr" if kind == "macro" else ".dgtexec"
+    types = _MACRO_TYPES if kind == "macro" else _PLUGIN_TYPES if kind == "plugin" else _THEME_TYPES if kind == "theme" else _EXEC_TYPES
+    ext = ".dgtmcr" if kind == "macro" else ".dgtkplgn" if kind == "plugin" else ".theme" if kind == "theme" else ".dgtexec"
     root = _root()
     try:
         path = filedialog.asksaveasfilename(
             parent=root,
-            title="Export " + ("Macro" if kind == "macro" else "Execution"),
+            title="Export " + ("Macro" if kind == "macro" else "Plugin" if kind == "plugin" else "Theme" if kind == "theme" else "Execution"),
             defaultextension=ext,
             initialfile=default_name + ext,
             filetypes=types,
@@ -39,12 +41,12 @@ def save_as(default_name, kind="macro"):
 
 def open_file(kind="macro"):
     """Ask which file to import. Returns the chosen path, or None if cancelled."""
-    types = _MACRO_TYPES if kind == "macro" else _EXEC_TYPES
+    types = _MACRO_TYPES if kind == "macro" else _PLUGIN_TYPES if kind == "plugin" else _THEME_TYPES if kind == "theme" else _EXEC_TYPES
     root = _root()
     try:
         path = filedialog.askopenfilename(
             parent=root,
-            title="Import " + ("Macro" if kind == "macro" else "Execution"),
+            title="Import " + ("Macro" if kind == "macro" else "Plugin" if kind == "plugin" else "Theme" if kind == "theme" else "Execution"),
             filetypes=types,
         )
     finally:
