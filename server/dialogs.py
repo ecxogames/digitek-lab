@@ -1,4 +1,4 @@
-# DigiTek Lab — Native file dialogs
+# Slice AMAS — Native file dialogs
 #
 # Save-As / Open dialogs for exporting and importing macros and executions,
 # implemented with tkinter (already part of the embedded Python runtime, so no
@@ -8,10 +8,10 @@
 import tkinter as tk
 from tkinter import filedialog
 
-_MACRO_TYPES = [("DigiTek Macro", "*.dgtmcr"), ("All files", "*.*")]
-_EXEC_TYPES = [("DigiTek Execution", "*.dgtexec"), ("All files", "*.*")]
-_PLUGIN_TYPES = [("DigiTek Plugin", "*.dgtkplgn"), ("All files", "*.*")]
-_THEME_TYPES = [("DigiTek Theme", "*.theme"), ("CSS Theme", "*.css"), ("All files", "*.*")]
+_MACRO_TYPES = [("Slice AMAS Macro", "*.slicemcr"), ("All files", "*.*")]
+_EXEC_TYPES = [("Slice AMAS Execution", "*.sliceexec"), ("All files", "*.*")]
+_PLUGIN_TYPES = [("Slice AMAS Plugin", "*.sliceplgn"), ("All files", "*.*")]
+_THEME_TYPES = [("Slice AMAS Theme", "*.theme"), ("CSS Theme", "*.css"), ("All files", "*.*")]
 
 
 def _root():
@@ -24,7 +24,7 @@ def _root():
 def save_as(default_name, kind="macro"):
     """Ask where to export. Returns the chosen path, or None if cancelled."""
     types = _MACRO_TYPES if kind == "macro" else _PLUGIN_TYPES if kind == "plugin" else _THEME_TYPES if kind == "theme" else _EXEC_TYPES
-    ext = ".dgtmcr" if kind == "macro" else ".dgtkplgn" if kind == "plugin" else ".theme" if kind == "theme" else ".dgtexec"
+    ext = ".slicemcr" if kind == "macro" else ".sliceplgn" if kind == "plugin" else ".theme" if kind == "theme" else ".sliceexec"
     root = _root()
     try:
         path = filedialog.asksaveasfilename(

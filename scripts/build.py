@@ -273,7 +273,7 @@ def parse_properties_config():
     props = {
         "TITLE": "ESD Suite Application",
         "VERSION": "1.0.0",
-        "AUTHOR": "Ecxo Softwares"
+        "AUTHOR": "dummtoby"
     }
     config_path = "properties.config"
     if os.path.exists(config_path):
@@ -293,7 +293,7 @@ def build_installer():
     props = parse_properties_config()
     app_title = props.get("TITLE", "ESD Suite Application")
     app_version = props.get("VERSION", "1.0.0")
-    app_publisher = props.get("AUTHOR", "Ecxo Softwares")
+    app_publisher = props.get("AUTHOR", "dummtoby")
     safe_name = "".join(c for c in app_title if c.isalnum())
     safe_exe_name = "".join(c for c in app_title if c.isalnum() or c in " _-") + ".exe"
     

@@ -1,5 +1,5 @@
 {
-  "format": "dgtmcr",
+  "format": "slicemcr",
   "schema": 1,
   "type": "macro",
   "id": "core-zoom-out-max",

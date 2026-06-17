@@ -88,7 +88,7 @@ def install_cmake():
         sys.exit(1)
 
 def install_python_deps():
-    """Install the Python packages the DigiTek Lab backend needs for development."""
+    """Install the Python packages the Slice AMAS backend needs for development."""
     deps = ["pynput", "vgamepad"]  # real keyboard/mouse plus virtual controller playback
     print(f"\n[*] Installing Python backend dependencies: {', '.join(deps)}...")
     try:

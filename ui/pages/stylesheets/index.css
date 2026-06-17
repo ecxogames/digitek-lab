@@ -1,7 +1,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* ── Slice dark editor palette ── */
+      /* ── Slice AMAS dark editor palette ── */
       --bg-app:        #0f0f0f;
       --bg-panel:      #181818;
       --bg-header:     #0a0a0a;
@@ -186,7 +186,7 @@
     #continuousStatus { color: var(--color-primary); }
 
     /* ── Toolbar / transport ── */
-    /* ── Toolbar (Slice icon-button style) ── */
+    /* ── Toolbar (Slice AMAS icon-button style) ── */
     .Toolbar {
       margin: 0; border-radius: 0; min-height: 40px;
       background: var(--bg-panel); border-bottom: 1px solid var(--border-color);
@@ -366,7 +366,7 @@
     .tlx-drag-ghost-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tlx-drag-ghost-sub { font-size: 10px; color: rgba(255,255,255,0.78); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* Solid filled clips (Slice video-editor style) */
+    /* Solid filled clips (Slice AMAS video-editor style) */
     .tlx-clip { position: absolute; height: 40px; border-radius: 4px; overflow: hidden; cursor: grab;
       border: 1px solid; display: flex; flex-direction: column; justify-content: center; gap: 0;
       padding: 3px 8px; user-select: none; box-sizing: border-box;

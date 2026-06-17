@@ -6,7 +6,7 @@ import zipfile
 import shutil
 import tempfile
 
-REPO_API_URL = "https://api.github.com/repos/ecxogames/esd-suite/releases/latest"
+REPO_API_URL = "https://api.github.com/repos/dummtoby/slice-amas/releases/latest"
 
 # Define what parts of the project are the "Framework" (safe to overwrite)
 # vs "User Space" (ui/, server/, private/, public/, properties.config)
@@ -120,7 +120,7 @@ def main():
     except urllib.error.HTTPError as e:
         if e.code == 404:
             print(f"[Error] No releases found in the repository yet (HTTP 404).")
-            print("Make sure you publish a release on https://github.com/ecxogames/esd-suite/releases first.")
+            print("Make sure you publish a release on https://github.com/dummtoby/slice-amas/releases first.")
         else:
             print(f"[Error] Network error HTTP {e.code}: {e.reason}")
     except Exception as e:

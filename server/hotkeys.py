@@ -1,4 +1,4 @@
-# DigiTek Lab — Global Hotkeys
+# Slice AMAS — Global Hotkeys
 #
 # While recording or playing back, keyboard focus is on Roblox, not the app
 # window. A global hotkey listener lets the user stop a recording (F8) or abort
@@ -39,7 +39,7 @@ def _on_press(key):
     if name == STOP_RECORD_KEY and recorder.is_recording():
         try:
             # The api layer owns saving; here we just halt capture. The UI polls
-            # record status, sees stoppedByHotkey, and finalizes via dgt_record_stop.
+            # record status, sees stoppedByHotkey, and finalizes via slice_record_stop.
             recorder._state["stopped_by_hotkey"] = True
         except Exception:
             pass

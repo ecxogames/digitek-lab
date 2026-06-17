@@ -1,6 +1,6 @@
-# DigiTek Lab — Machinima Camera Tool
+# Slice AMAS — Machinima Camera Tool
 
-DigiTek Lab helps you film machinimas in *Welcome to Bloxburg* by building
+Slice AMAS (Advanced Modern Automation System) helps you film machinimas in *Welcome to Bloxburg* by building
 repeatable camera **executions** out of reusable **macros**, single-use
 **actions**, and bundled **core engine macros**, then replaying them as real
 keyboard/mouse input to the game.
@@ -9,10 +9,10 @@ keyboard/mouse input to the game.
 
 | Term | What it is | File |
 |---|---|---|
-| **Macro** | A recorded, reusable sequence of real input (timestamped, screen-normalized). | `data/macros/*.dgtmcr` |
-| **Action** | A *parameterized* step (key press, drag, scroll, FOV, wait…). Its template ships with the app; configured copies live inline in an execution. | `server/core/actions/*.dgtact` |
-| **Core engine macro** | A bundled, read-only macro used by the engine (reset / first-person / zoom). | `server/core/macros/*.dgtmcr` |
-| **Execution** | A **multi-track timeline** of clips (macros / core macros / actions). | `data/executions/*.dgtexec` |
+| **Macro** | A recorded, reusable sequence of real input (timestamped, screen-normalized). | `data/macros/*.slicemcr` |
+| **Action** | A *parameterized* step (key press, drag, scroll, FOV, wait…). Its template ships with the app; configured copies live inline in an execution. | `server/core/actions/*.sliceact` |
+| **Core engine macro** | A bundled, read-only macro used by the engine (reset / first-person / zoom). | `server/core/macros/*.slicemcr` |
+| **Execution** | A **multi-track timeline** of clips (macros / core macros / actions). | `data/executions/*.sliceexec` |
 
 All three are plain JSON under custom extensions. Coordinates are stored
 **normalized 0..1** to the recording screen, so playback adapts to resolution.
@@ -44,15 +44,15 @@ position **after** the timeline finishes (see Presets & motion control).
 
 ```
 server/core/
- ├── macros/     core engine macros   (*.dgtmcr)
- └── actions/    action templates     (*.dgtact)
+ ├── macros/     core engine macros   (*.slicemcr)
+ └── actions/    action templates     (*.sliceact)
 ```
 
-Action templates (`.dgtact`) are the single source of truth for the palette: each
+Action templates (`.sliceact`) are the single source of truth for the palette: each
 defines its `actionType`, `name`, `icon`, `order`, `defaults`, editor `fields`
 (with `widget` hints), and an optional `pick` descriptor. The UI loads them at boot
-via `dgt_list_actions`; the Python `player` compiles each `actionType` to events.
-Edit the `.dgtact` files to change actions — the frontend has only a fallback copy.
+via `slice_list_actions`; the Python `player` compiles each `actionType` to events.
+Edit the `.sliceact` files to change actions — the frontend has only a fallback copy.
 
 ### Screen picker overlay
 

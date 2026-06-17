@@ -49,11 +49,11 @@
       "trimStart": 0
     }
   ],
-  "format": "dgtexec",
+  "format": "sliceexec",
   "schema": 1,
   "name": "CINEMATIC - 001",
   "motionControlled": false,
-  "ref": "cinematic-001.dgtexec",
+  "ref": "cinematic-001.sliceexec",
   "createdAt": "2026-06-07T11:04:10",
   "updatedAt": "2026-06-07T11:19:32"
 }

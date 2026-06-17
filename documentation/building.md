@@ -32,4 +32,4 @@ When distributing manually, keep this structure:
 
 **Note:** Pip dependencies for your backend aren't copied automatically. You must bundle them in a `site-packages` folder or install them into the embeddable Python environment before distribution.
 
-**DigiTek Lab dependency:** The backend uses `pynput` for keyboard/mouse capture and playback. `scripts/build.py`'s Standalone build now pip-installs `pynput` into the dist root (importable via the embeddable Python's default `_pth`). If you build the embeddable runtime by other means, install `pynput` into it manually — otherwise record/playback are disabled at runtime (the UI loads and shows a warning).
+**Slice AMAS dependency:** The backend uses `pynput` for keyboard/mouse capture and playback. `scripts/build.py`'s Standalone build now pip-installs `pynput` into the dist root (importable via the embeddable Python's default `_pth`). If you build the embeddable runtime by other means, install `pynput` into it manually — otherwise record/playback are disabled at runtime (the UI loads and shows a warning).

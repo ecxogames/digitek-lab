@@ -1,7 +1,7 @@
-# DigiTek Lab — Macro Recorder
+# Slice AMAS — Macro Recorder
 #
 # Captures real keyboard + mouse input via pynput listeners and turns it into a
-# timestamped, screen-normalized event stream that can be saved as a .dgtmcr.
+# timestamped, screen-normalized event stream that can be saved as a .slicemcr.
 #
 # Event schema (relative time `t` in seconds from record start):
 #   {"t":.., "type":"key",    "action":"down|up", "key":"w"}

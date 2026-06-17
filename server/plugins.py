@@ -15,20 +15,20 @@ import zipfile
 
 from . import macros
 
-PLUGIN_EXT = ".dgtkplgn"
+PLUGIN_EXT = ".sliceplgn"
 PLUGIN_MANIFEST = "properties.config"
-PLUGIN_INSTALL_META = os.path.join(".digitek", "install.json")
+PLUGIN_INSTALL_META = os.path.join(".slice-amas", "install.json")
 PLUGIN_REQUIREMENTS = "requirements.txt"
 PLUGIN_PERMISSIONS = "permissions.txt"
 PLUGINS_DIR = os.path.join(macros.DATA_DIR, "plugins")
 PLUGIN_PACKAGES_DIR = os.path.join(macros.DATA_DIR, "plugin-packages")
 PLUGIN_DATA_DIR = os.path.join(macros.DATA_DIR, "plugin-data")
 PINNED_PLUGINS_FILE = os.path.join(macros.DATA_DIR, "pinned_plugins.json")
-MARKETPLACE_MANIFEST_URL = "https://raw.githubusercontent.com/dummtoby/digitek-lab/plugins/manifest.json"
-MARKETPLACE_RAW_BASE_URL = "https://raw.githubusercontent.com/dummtoby/digitek-lab/plugins"
-MARKETPLACE_CONTENTS_API_BASE = "https://api.github.com/repos/dummtoby/digitek-lab/contents"
+MARKETPLACE_MANIFEST_URL = "https://raw.githubusercontent.com/dummtoby/slice-amas/plugins/manifest.json"
+MARKETPLACE_RAW_BASE_URL = "https://raw.githubusercontent.com/dummtoby/slice-amas/plugins"
+MARKETPLACE_CONTENTS_API_BASE = "https://api.github.com/repos/dummtoby/slice-amas/contents"
 MARKETPLACE_BRANCH = "plugins"
-MARKETPLACE_BLOB_BASE_URL = "https://github.com/dummtoby/digitek-lab/blob/plugins"
+MARKETPLACE_BLOB_BASE_URL = "https://github.com/dummtoby/slice-amas/blob/plugins"
 
 _MODULE_CACHE = {}
 
@@ -106,7 +106,7 @@ def _path_within(path, root):
 
 
 def _plugin_module_name(plugin_id):
-    return "dgt_plugin_" + re.sub(r"[^a-zA-Z0-9_]", "_", _slugify(plugin_id))
+    return "slice_plugin_" + re.sub(r"[^a-zA-Z0-9_]", "_", _slugify(plugin_id))
 
 
 def _remove_pycache(root):
@@ -338,7 +338,7 @@ def _native_icon_path(root, manifest):
             return ""
         if path.lower().endswith(".ico"):
             return path
-        cache_dir = os.path.join(root, ".digitek")
+        cache_dir = os.path.join(root, ".slice-amas")
         ico_path = os.path.join(cache_dir, "icon.ico")
         if os.path.exists(ico_path) and os.path.getmtime(ico_path) >= os.path.getmtime(path):
             return ico_path
@@ -383,7 +383,7 @@ def import_plugin(path):
     if not os.path.isfile(path):
         raise ValueError("Plugin file not found.")
     if not path.lower().endswith(PLUGIN_EXT):
-        raise ValueError("Expected a .dgtkplgn file.")
+        raise ValueError("Expected a .sliceplgn file.")
 
     temp = os.path.join(PLUGINS_DIR, "_import_" + str(int(time.time() * 1000)))
     os.makedirs(temp, exist_ok=True)
@@ -524,7 +524,7 @@ def plugin_update_status(plugin_id=None):
 def _infer_package_path(plugin_id, version, plugin_path=""):
     normalized_version = str(version or "1.0.0")
     base_path = (plugin_path or ("/" + plugin_id + "/")).strip("/")
-    return f"/{base_path}/release/{plugin_id}-{normalized_version}.dgtkplgn"
+    return f"/{base_path}/release/{plugin_id}-{normalized_version}.sliceplgn"
 
 
 def _resolve_existing_marketplace_package(meta, package):
@@ -574,7 +574,7 @@ def _latest_marketplace_release(meta):
     except Exception:
         return ""
     candidates = []
-    pattern = re.compile(r"^" + re.escape(plugin_id) + r"-(.+)\.dgtkplgn$", re.IGNORECASE)
+    pattern = re.compile(r"^" + re.escape(plugin_id) + r"-(.+)\.sliceplgn$", re.IGNORECASE)
     for item in items if isinstance(items, list) else []:
         name = str(item.get("name") or "")
         match = pattern.match(name)
@@ -590,13 +590,13 @@ def _latest_marketplace_release(meta):
 
 def _version_from_package(plugin_id, package):
     name = os.path.basename(str(package or ""))
-    match = re.match(r"^" + re.escape(_slugify(plugin_id)) + r"-(.+)\.dgtkplgn$", name, re.IGNORECASE)
+    match = re.match(r"^" + re.escape(_slugify(plugin_id)) + r"-(.+)\.sliceplgn$", name, re.IGNORECASE)
     return match.group(1) if match else ""
 
 
 def _http_headers():
     return {
-        "User-Agent": "DigiTek-Lab-Plugin-Installer",
+        "User-Agent": "Slice-AMAS-Plugin-Installer",
         "Cache-Control": "no-cache",
         "Pragma": "no-cache",
     }

@@ -1,18 +1,18 @@
-# DigiTek Lab — Macro & Execution storage
+# Slice AMAS — Macro & Execution storage
 #
 # Owns the on-disk formats and the data directory. Two file types, both plain
 # JSON under custom extensions:
-#   .dgtmcr  — a recorded, reusable macro
-#   .dgtexec — an execution (a timeline of items)
+#   .slicemcr  — a recorded, reusable macro
+#   .sliceexec — an execution (a timeline of items)
 #
 # Saved data lives in the per-user OS app-data directory (e.g.
-# %LOCALAPPDATA%\DigiTek Lab on Windows) — NEVER the install/app folder, so a
+# %LOCALAPPDATA%\Slice AMAS on Windows) — NEVER the install/app folder, so a
 # built app installed in Program Files or run from D:\ still saves to a writable,
 # user-local location. Exporting a macro/execution uses a native Save dialog
 # (see dialogs.py) so the user chooses where the exported file goes.
 #
 # Bundled engine assets ship read-only with the app under server/core/
-# (core/macros/*.dgtmcr and core/actions/*.dgtact).
+# (core/macros/*.slicemcr and core/actions/*.sliceact).
 
 import os
 import sys
@@ -22,14 +22,14 @@ import uuid
 import time
 
 SCHEMA = 1
-MACRO_EXT = ".dgtmcr"   # a recorded/reusable macro
-EXEC_EXT = ".dgtexec"   # an execution (timeline)
-ACTION_EXT = ".dgtact"  # a parameterized action template
+MACRO_EXT = ".slicemcr"   # a recorded/reusable macro
+EXEC_EXT = ".sliceexec"   # an execution (timeline)
+ACTION_EXT = ".sliceact"  # a parameterized action template
 
 # ── Paths ─────────────────────────────────────────────────────────────
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 APP_ROOT = os.path.abspath(os.path.join(_THIS_DIR, ".."))
-APP_NAME = "DigiTek Lab"
+APP_NAME = "Slice AMAS"
 
 
 def _user_data_dir(app=APP_NAME):
@@ -48,8 +48,8 @@ DATA_DIR = _user_data_dir()
 MACROS_DIR = os.path.join(DATA_DIR, "macros")
 EXECS_DIR = os.path.join(DATA_DIR, "executions")
 # Bundled, read-only engine assets live under server/core/:
-#   core/macros/*.dgtmcr   — core engine macros
-#   core/actions/*.dgtact  — parameterized action templates
+#   core/macros/*.slicemcr   — core engine macros
+#   core/actions/*.sliceact  — parameterized action templates
 CORE_DIR = os.path.join(_THIS_DIR, "core")
 CORE_MACROS_DIR = os.path.join(CORE_DIR, "macros")
 CORE_ACTIONS_DIR = os.path.join(CORE_DIR, "actions")
@@ -133,7 +133,7 @@ def _macro_summary(data, ref):
     }
 
 
-# ── Macros (.dgtmcr) ──────────────────────────────────────────────────
+# ── Macros (.slicemcr) ──────────────────────────────────────────────────
 def save_macro(data):
     """
     Persist a macro dict. Fills in id/schema/timestamps and returns its summary.
@@ -141,7 +141,7 @@ def save_macro(data):
     """
     ensure_dirs()
     data = dict(data or {})
-    data["format"] = "dgtmcr"
+    data["format"] = "slicemcr"
     data["schema"] = SCHEMA
     data["type"] = "macro"
     data.setdefault("id", str(uuid.uuid4()))
@@ -234,11 +234,11 @@ def resolve_macro(kind, ref):
     return load_macro(ref)
 
 
-# ── Core action templates (read-only, bundled, .dgtact) ───────────────
+# ── Core action templates (read-only, bundled, .sliceact) ───────────────
 def list_core_actions():
     """
     Return the bundled, parameterized action templates the UI palette is built
-    from. Each is a parsed .dgtact dict (actionType, name, icon, fields, defaults,
+    from. Each is a parsed .sliceact dict (actionType, name, icon, fields, defaults,
     optional `pick` descriptor for the coordinate-picker overlay).
     """
     out = []
@@ -258,10 +258,10 @@ def list_core_actions():
     return out
 
 
-# ── Executions (.dgtexec) ─────────────────────────────────────────────
+# ── Executions (.sliceexec) ─────────────────────────────────────────────
 def new_execution(name="Untitled Execution"):
     return {
-        "format": "dgtexec",
+        "format": "sliceexec",
         "schema": SCHEMA,
         "name": name,
         "motionControlled": False,
@@ -274,7 +274,7 @@ def new_execution(name="Untitled Execution"):
 def save_execution(name, data):
     ensure_dirs()
     data = dict(data or {})
-    data["format"] = "dgtexec"
+    data["format"] = "sliceexec"
     data["schema"] = SCHEMA
     data["name"] = name or data.get("name") or "Untitled Execution"
     data.setdefault("motionControlled", False)
@@ -322,11 +322,11 @@ def list_executions():
 
 # ── Import / export (raw file copy with a JSON validity check) ─────────
 def read_raw_file(path):
-    """Read & validate an external .dgtmcr/.dgtexec file. Returns the parsed dict."""
+    """Read & validate an external .slicemcr/.sliceexec file. Returns the parsed dict."""
     data = _read_json(path)
     fmt = data.get("format")
-    if fmt not in ("dgtmcr", "dgtexec"):
-        raise ValueError("Not a DigiTek file (missing format marker).")
+    if fmt not in ("slicemcr", "sliceexec"):
+        raise ValueError("Not a Slice AMAS file (missing format marker).")
     return data
 
 

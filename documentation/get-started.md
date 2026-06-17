@@ -1,6 +1,6 @@
 # Getting Started with ESD Suite
 
-Welcome to the Ecxo Softwares Development (ESD) Suite! This framework is a cross-platform desktop application engine that bridges C++, Python, and JavaScript.
+Welcome to the dummtoby Development (ESD) Suite! This framework is a cross-platform desktop application engine that bridges C++, Python, and JavaScript.
 
 ## Architecture Overview
 
@@ -48,4 +48,4 @@ python scripts/dev.py
 ## Next Steps
 Now you are ready to start developing your very own software using the ESD Suite! The application will launch with a simple UI, and you can begin customizing the frontend and backend logic as needed.
 
-For more detailed documentation on how to use the API, integrate AI features, and customize the UI, please refer to the [API Documentation](api-docs.md) in the `documentation` folder of this project or visit the [ESD Engine's Website](https://esde.ecxogames.ca/).
+For more detailed documentation on how to use the API, integrate AI features, and customize the UI, please refer to the [API Documentation](api-docs.md) in the `documentation` folder of this project or visit the [ESD Engine's Website](https://github.com/dummtoby/slice-amas).

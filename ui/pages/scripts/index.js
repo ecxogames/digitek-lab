@@ -26,7 +26,7 @@
   function defaultMotionKeyMap() { return JSON.parse(JSON.stringify(DEFAULT_MOTION_KEY_MAP)); }
 
   const state = {
-    execution: { format: 'dgtexec', schema: 1, name: 'Untitled Execution', motionControlled: false, motionKeyMap: defaultMotionKeyMap(), timeline: [] },
+    execution: { format: 'sliceexec', schema: 1, name: 'Untitled Execution', motionControlled: false, motionKeyMap: defaultMotionKeyMap(), timeline: [] },
     macros: { user: [], core: [] },
     pinnedPluginIds: [],
     appInfo: null,
@@ -44,12 +44,12 @@
 
   let uid = 1;
   const newId = () => 'i' + (uid++);
-  const PINNED_PLUGINS_KEY = 'dgt_pinned_plugins';
+  const PINNED_PLUGINS_KEY = 'slice_pinned_plugins';
 
   /* ───────────────────────── Action palette ───────────────────────── */
-  // Source of truth is server/core/actions/*.dgtact, loaded at boot via loadActions().
+  // Source of truth is server/core/actions/*.sliceact, loaded at boot via loadActions().
   // The literal below is a fallback used only if the backend is unavailable (e.g. opened
-  // in a plain browser). Edit the .dgtact files to change actions, not this object.
+  // in a plain browser). Edit the .sliceact files to change actions, not this object.
   let ACTIONS = {
     keypress:  { icon:'keyboard', label:'Key Press', desc:'Tap a single key',
       def:{ key:'w', holdMs:100 },
@@ -89,11 +89,11 @@
       fields:[ {k:'ms',label:'Duration (ms)',type:'number'} ] },
   };
 
-  // Load action templates from server/core/actions/*.dgtact and build the ACTIONS map.
+  // Load action templates from server/core/actions/*.sliceact and build the ACTIONS map.
   // Each template: { actionType, name, icon, description, order, defaults, fields, pick? }.
   async function loadActions() {
     let list;
-    try { list = await bridge({ action:'dgt_list_actions' }); }
+    try { list = await bridge({ action:'slice_list_actions' }); }
     catch (e) { return; }                       // keep the literal fallback
     if (!Array.isArray(list) || !list.length) return;
     const built = {};
@@ -999,7 +999,7 @@
 
   async function refreshControllerSupportStatus() {
     try {
-      const st = await bridge({ action:'dgt_controller_support_status' });
+      const st = await bridge({ action:'slice_controller_support_status' });
       state.appInfo = Object.assign({}, state.appInfo || {}, st);
       renderControllerSupportRow();
       return st;
@@ -1045,10 +1045,10 @@
     document.getElementById('supportIcon').textContent = kind === 'uninstall' ? 'delete' : 'download';
     document.getElementById('supportTitle').textContent = kind === 'uninstall' ? 'Removing controller support' : (kind === 'reinstall' ? 'Reinstalling controller support' : 'Setting up controller support');
     document.getElementById('supportSub').textContent = kind === 'uninstall'
-      ? 'DigiTek Lab is removing vgamepad and the ViGEmBus virtual controller driver.'
+      ? 'Slice AMAS is removing vgamepad and the ViGEmBus virtual controller driver.'
       : (kind === 'reinstall'
-        ? 'DigiTek Lab is reinstalling vgamepad and checking the ViGEmBus virtual controller driver.'
-        : 'DigiTek Lab is installing vgamepad and checking the ViGEmBus virtual controller driver.');
+        ? 'Slice AMAS is reinstalling vgamepad and checking the ViGEmBus virtual controller driver.'
+        : 'Slice AMAS is installing vgamepad and checking the ViGEmBus virtual controller driver.');
     updateControllerSupportProgress({ progress:0, phase:'Starting', message:'Starting...', detail:'' });
   }
 
@@ -1085,9 +1085,9 @@
   async function runControllerSupportJob(kind) {
     showControllerSupportProgress(kind);
     try {
-      await bridge({ action:'dgt_controller_support_job_start', kind });
+      await bridge({ action:'slice_controller_support_job_start', kind });
       while (true) {
-        const st = await bridge({ action:'dgt_controller_support_job_status' });
+        const st = await bridge({ action:'slice_controller_support_job_status' });
         updateControllerSupportProgress(st);
         if (st.done || !st.running) {
           state.appInfo = Object.assign({}, state.appInfo || {}, {
@@ -1515,7 +1515,7 @@
     if (state.appInfo && !state.appInfo.inputAvailable) { toast('err', state.appInfo.inputError || 'Input unavailable'); return; }
     await runCountdown('Switch to Roblox…');
     try {
-      await bridge({ action:'dgt_record_start', motionControlled: state.execution.motionControlled });
+      await bridge({ action:'slice_record_start', motionControlled: state.execution.motionControlled });
       state.recording = true;
       state.recordMotion = state.execution.motionControlled;
       document.getElementById('recordBtn').classList.add('recording');
@@ -1531,7 +1531,7 @@
     state.recTimer = setInterval(async () => {
       document.getElementById('recTime').textContent = ((Date.now()-t0)/1000).toFixed(1) + 's';
       try {
-        const st = await bridge({ action:'dgt_record_status' });
+        const st = await bridge({ action:'slice_record_status' });
         if (st.stoppedByHotkey) finishRecording();
       } catch (e) {}
     }, 250);
@@ -1546,7 +1546,7 @@
     document.getElementById('recordBtn').innerHTML = '<span class="material-symbols-outlined">fiber_manual_record</span>';
     setStatus('Ready', 'check_circle');
     let result;
-    try { result = await bridge({ action:'dgt_record_stop' }); }
+    try { result = await bridge({ action:'slice_record_stop' }); }
     catch (e) { toast('err', e.message); return; }
     if (!result || !result.ok || !result.events.length) { toast('info', 'Nothing was recorded.'); return; }
 
@@ -1557,7 +1557,7 @@
     });
     if (name === null) { toast('info', 'Recording discarded.'); return; }
     try {
-      await bridge({ action:'dgt_save_macro', data: {
+      await bridge({ action:'slice_save_macro', data: {
         name: name || 'New Macro', kind: result.kind, motionControlled: result.motionControlled,
         duration: result.duration, events: result.events,
       }});
@@ -1583,8 +1583,8 @@
   /* ───────────────────────── Play flow ───────────────────────── */
   async function onPlayPause() {
     if (state.playing) {
-      if (state.paused) { await bridge({ action:'dgt_resume' }).catch(()=>{}); state.paused = false; setPlayIcon('pause'); setStatus(state.continuous?'Playing (continuous)…':'Playing…','play_arrow'); }
-      else { await bridge({ action:'dgt_pause' }).catch(()=>{}); state.paused = true; setPlayIcon('play_arrow'); setStatus('Paused','pause'); }
+      if (state.paused) { await bridge({ action:'slice_resume' }).catch(()=>{}); state.paused = false; setPlayIcon('pause'); setStatus(state.continuous?'Playing (continuous)…':'Playing…','play_arrow'); }
+      else { await bridge({ action:'slice_pause' }).catch(()=>{}); state.paused = true; setPlayIcon('play_arrow'); setStatus('Paused','pause'); }
       return;
     }
     if (!state.execution.timeline.length) { toast('info', 'Add some items to the timeline first.'); return; }
@@ -1599,7 +1599,7 @@
     await runCountdown('Switch to Roblox…');
     try {
       state.stopRequested = false; state.restarting = false;
-      await bridge({ action:'dgt_play', execution: state.execution });
+      await bridge({ action:'slice_play', execution: state.execution });
       state.playing = true; state.paused = false;
       setPlayIcon('pause');
       setStatus(state.continuous ? 'Playing (continuous)…' : 'Playing…', 'play_arrow');
@@ -1612,14 +1612,14 @@
 
   async function onStop() {
     state.stopRequested = true;            // prevent continuous mode from relooping
-    await bridge({ action:'dgt_stop' }).catch(()=>{});
+    await bridge({ action:'slice_stop' }).catch(()=>{});
     endPlayback();
   }
 
   function startPlayPolling() {
     state.pollTimer = setInterval(async () => {
       let st;
-      try { st = await bridge({ action:'dgt_playback_status' }); } catch (e) { return; }
+      try { st = await bridge({ action:'slice_playback_status' }); } catch (e) { return; }
 
       if (st.phase === 'rewind') {
         setStatus('Playing backward to start…', 'fast_rewind');
@@ -1637,7 +1637,7 @@
         if (state.continuous && !state.stopRequested) {
           if (state.restarting) return;      // a restart is already in flight
           state.restarting = true;
-          try { await bridge({ action:'dgt_play', execution: state.execution }); positionPlayhead(0); }
+          try { await bridge({ action:'slice_play', execution: state.execution }); positionPlayhead(0); }
           catch (e) { toast('err', e.message); state.restarting = false; endPlayback(); }
           return;                            // cleared once playing is observed again
         }
@@ -1730,7 +1730,7 @@
   }
 
   function onNewExecution() {
-    state.execution = { format:'dgtexec', schema:1, name:'Untitled Execution', motionControlled:false, motionKeyMap:defaultMotionKeyMap(), timeline:[] };
+    state.execution = { format:'sliceexec', schema:1, name:'Untitled Execution', motionControlled:false, motionKeyMap:defaultMotionKeyMap(), timeline:[] };
     setExecNameLabel(state.execution.name);
     document.getElementById('motionToggle').checked = false;
     syncMotionBtn();
@@ -1750,7 +1750,7 @@
     state.execution.name = name || 'Untitled Execution';
     setExecNameLabel(state.execution.name);
     try {
-      const r = await bridge({ action:'dgt_save_execution', name: state.execution.name, data: state.execution });
+      const r = await bridge({ action:'slice_save_execution', name: state.execution.name, data: state.execution });
       state.execution.ref = r.ref;
       toast('ok', `Saved execution “${r.name}”.`);
     } catch (e) { toast('err', e.message); }
@@ -1758,7 +1758,7 @@
 
   async function onDeleteExecution() {
     let list;
-    try { list = await bridge({ action:'dgt_list_executions' }); } catch (e) { return toast('err', e.message); }
+    try { list = await bridge({ action:'slice_list_executions' }); } catch (e) { return toast('err', e.message); }
     if (!list.length) return toast('info', 'No saved executions to delete.');
     const ref = await nativePick({
       title:'Delete Execution', tbLabel:'Delete Execution', message:'Choose an execution to delete:',
@@ -1774,7 +1774,7 @@
     });
     if (!ok) return;
     try {
-      await bridge({ action:'dgt_delete_execution', ref });
+      await bridge({ action:'slice_delete_execution', ref });
       if (state.execution.ref === ref) state.execution.ref = undefined;
       toast('ok', 'Execution deleted.');
     } catch (e) { toast('err', e.message); }
@@ -1782,7 +1782,7 @@
 
   async function onOpenExecution() {
     let list;
-    try { list = await bridge({ action:'dgt_list_executions' }); } catch (e) { return toast('err', e.message); }
+    try { list = await bridge({ action:'slice_list_executions' }); } catch (e) { return toast('err', e.message); }
     if (!list.length) return toast('info', 'No saved executions yet.');
     const ref = await nativePick({
       title:'Open Execution', tbLabel:'Open Execution', message:'Choose a saved execution:',
@@ -1791,7 +1791,7 @@
     });
     if (!ref) return;
     try {
-      const data = await bridge({ action:'dgt_load_execution', ref });
+      const data = await bridge({ action:'slice_load_execution', ref });
       loadExecutionData(data);
       state.execution.ref = ref;
       toast('ok', `Opened “${data.name}”.`);
@@ -1811,7 +1811,7 @@
 
   async function onExportExecution() {
     try {
-      const r = await bridge({ action:'dgt_export_execution', data: state.execution });
+      const r = await bridge({ action:'slice_export_execution', data: state.execution });
       if (r.cancelled) return;
       toast('ok', 'Exported execution.');
     } catch (e) { toast('err', e.message); }
@@ -1820,12 +1820,12 @@
   /* ───────────────────────── Macro list ops ───────────────────────── */
   async function refreshMacros() {
     try {
-      state.macros = await bridge({ action:'dgt_list_macros' });
+      state.macros = await bridge({ action:'slice_list_macros' });
       renderActionList();
     } catch (e) { /* backend may be warming up */ }
   }
   async function exportMacro(ref) {
-    try { const r = await bridge({ action:'dgt_export_macro', ref, kind:'macro' }); if (!r.cancelled) toast('ok', 'Macro exported.'); }
+    try { const r = await bridge({ action:'slice_export_macro', ref, kind:'macro' }); if (!r.cancelled) toast('ok', 'Macro exported.'); }
     catch (e) { toast('err', e.message); }
   }
   async function deleteMacro(ref, name) {
@@ -1835,11 +1835,11 @@
       confirmLabel:'Delete', danger:true,
     });
     if (!ok) return;
-    try { await bridge({ action:'dgt_delete_macro', ref }); toast('ok', 'Macro deleted.'); refreshMacros(); }
+    try { await bridge({ action:'slice_delete_macro', ref }); toast('ok', 'Macro deleted.'); refreshMacros(); }
     catch (e) { toast('err', e.message); }
   }
   async function onImportMacro() {
-    try { const r = await bridge({ action:'dgt_import_macro' }); if (r.cancelled) return; toast('ok', `Imported “${r.name}”.`); refreshMacros(); }
+    try { const r = await bridge({ action:'slice_import_macro' }); if (r.cancelled) return; toast('ok', `Imported “${r.name}”.`); refreshMacros(); }
     catch (e) { toast('err', e.message); }
   }
 
@@ -1851,13 +1851,13 @@
   }
 
   async function loadActiveTheme() {
-    try { applyTheme(await bridge({ action:'dgt_active_theme' })); }
+    try { applyTheme(await bridge({ action:'slice_active_theme' })); }
     catch (_e) { applyTheme(null); }
   }
 
   async function onImportTheme() {
     try {
-      const r = await bridge({ action:'dgt_import_theme' });
+      const r = await bridge({ action:'slice_import_theme' });
       if (r.cancelled) return;
       await loadActiveTheme();
       toast('ok', `Imported theme “${r.name}”.`);
@@ -1869,11 +1869,11 @@
     let themes = [];
     let active = {};
     try {
-      themes = await bridge({ action:'dgt_list_themes' });
-      active = await bridge({ action:'dgt_active_theme' });
+      themes = await bridge({ action:'slice_list_themes' });
+      active = await bridge({ action:'slice_active_theme' });
     } catch (e) { return toast('err', e.message); }
     const activeId = active.id || '';
-    const rows = [{ id:'', name:'Default', description:'Use DigiTek Lab built-in styling.', builtin:true, active:!activeId }].concat(themes);
+    const rows = [{ id:'', name:'Default', description:'Use Slice AMAS built-in styling.', builtin:true, active:!activeId }].concat(themes);
     openParamModal({
       title:'Manage Themes', icon:'palette', hideOk:true, customWide:true,
       render: (body) => {
@@ -1899,7 +1899,7 @@
 
   async function setTheme(themeId) {
     try {
-      const theme = await bridge({ action:'dgt_set_theme', themeId });
+      const theme = await bridge({ action:'slice_set_theme', themeId });
       applyTheme(theme);
       toast('ok', theme.id ? `Applied “${theme.name}”.` : 'Applied default theme.');
       openThemeManager();
@@ -1909,12 +1909,12 @@
   async function removeTheme(themeId, name) {
     const ok = await nativeConfirm({
       title:'Remove theme?', tbLabel:'Remove Theme',
-      message:`“${name}” will be removed from DigiTek Lab.`,
+      message:`“${name}” will be removed from Slice AMAS.`,
       confirmLabel:'Remove', danger:true,
     });
     if (!ok) return;
     try {
-      await bridge({ action:'dgt_remove_theme', themeId });
+      await bridge({ action:'slice_remove_theme', themeId });
       await loadActiveTheme();
       toast('ok', 'Theme removed.');
       openThemeManager();
@@ -1926,7 +1926,7 @@
     const progress = openPluginInstallProgress('Importing Plugin', 'Waiting for file selection...');
     try {
       progress.set(18, 'Selecting plugin package...');
-      const r = await bridge({ action:'dgt_import_plugin' });
+      const r = await bridge({ action:'slice_import_plugin' });
       progress.done();
       if (r.cancelled) return;
       toast('ok', `Imported plugin “${r.name}”.`);
@@ -1940,7 +1940,7 @@
 
   async function openPluginsFolder() {
     try {
-      const r = await bridge({ action:'dgt_open_plugins_folder' });
+      const r = await bridge({ action:'slice_open_plugins_folder' });
       toast('ok', `Opened plugins folder: ${r.path}`);
     } catch (e) { toast('err', e.message); }
   }
@@ -1948,9 +1948,9 @@
   async function openPluginManager() {
     let plugins = [];
     let updates = {};
-    try { plugins = await bridge({ action:'dgt_list_plugins' }); }
+    try { plugins = await bridge({ action:'slice_list_plugins' }); }
     catch (e) { return toast('err', e.message); }
-    try { updates = await bridge({ action:'dgt_plugin_update_status' }); }
+    try { updates = await bridge({ action:'slice_plugin_update_status' }); }
     catch (_e) { updates = {}; }
     const pinned = new Set(await fetchPinnedPluginIds());
     openParamModal({
@@ -1983,7 +1983,7 @@
 
   async function openPluginMarketplace(refreshed) {
     let plugins = [];
-    try { plugins = await bridge({ action:'dgt_marketplace_plugins' }); }
+    try { plugins = await bridge({ action:'slice_marketplace_plugins' }); }
     catch (e) { return toast('err', e.message); }
     if (refreshed) toast('ok', 'Plugin marketplace refreshed.');
     openParamModal({
@@ -2028,7 +2028,7 @@
     const progress = openPluginInstallProgress('Installing Plugin', 'Downloading plugin package...');
     try {
       progress.set(24, 'Downloading plugin package...');
-      const r = await bridge({ action:'dgt_install_marketplace_plugin', pluginId });
+      const r = await bridge({ action:'slice_install_marketplace_plugin', pluginId });
       progress.done('Plugin installed.');
       toast('ok', `Installed “${r.name}”.`);
       await refreshPinnedPlugins();
@@ -2043,7 +2043,7 @@
     const progress = openPluginInstallProgress('Updating Plugin', 'Downloading latest plugin package...');
     try {
       progress.set(24, 'Downloading latest plugin package...');
-      const r = await bridge({ action:'dgt_update_plugin', pluginId });
+      const r = await bridge({ action:'slice_update_plugin', pluginId });
       progress.done('Plugin updated.');
       toast('ok', `Updated “${r.name}” to v${r.version}.`);
       await refreshPinnedPlugins();
@@ -2114,12 +2114,12 @@
   async function removeInstalledPlugin(pluginId, name, refreshView) {
     const ok = await nativeConfirm({
       title:'Remove plugin?', tbLabel:'Remove Plugin',
-      message:`“${name}” will be removed from DigiTek Lab. You can import it again later.`,
+      message:`“${name}” will be removed from Slice AMAS. You can import it again later.`,
       confirmLabel:'Remove', danger:true,
     });
     if (!ok) return;
     try {
-      await bridge({ action:'dgt_remove_plugin', pluginId });
+      await bridge({ action:'slice_remove_plugin', pluginId });
       await refreshPinnedPlugins();
       toast('ok', 'Plugin removed.');
       if (refreshView === 'marketplace') openPluginMarketplace();
@@ -2149,7 +2149,7 @@
 
   async function fetchPinnedPluginIds() {
     try {
-      const ids = await bridge({ action:'dgt_get_pinned_plugins' });
+      const ids = await bridge({ action:'slice_get_pinned_plugins' });
       state.pinnedPluginIds = normalizePinnedPluginIds(ids);
       try { localStorage.setItem(PINNED_PLUGINS_KEY, JSON.stringify(state.pinnedPluginIds)); } catch (_e) {}
       return state.pinnedPluginIds;
@@ -2161,7 +2161,7 @@
   async function savePinnedPluginIds(ids) {
     state.pinnedPluginIds = normalizePinnedPluginIds(ids);
     try { localStorage.setItem(PINNED_PLUGINS_KEY, JSON.stringify(state.pinnedPluginIds)); } catch (_e) {}
-    try { state.pinnedPluginIds = normalizePinnedPluginIds(await bridge({ action:'dgt_set_pinned_plugins', pluginIds: state.pinnedPluginIds })); }
+    try { state.pinnedPluginIds = normalizePinnedPluginIds(await bridge({ action:'slice_set_pinned_plugins', pluginIds: state.pinnedPluginIds })); }
     catch (_e) {}
     return state.pinnedPluginIds;
   }
@@ -2204,7 +2204,7 @@
       return;
     }
     let plugins = [];
-    try { plugins = await bridge({ action:'dgt_list_plugins' }); }
+    try { plugins = await bridge({ action:'slice_list_plugins' }); }
     catch (_e) {
       wrap.innerHTML = '';
       if (divider) divider.hidden = true;
@@ -2226,8 +2226,8 @@
     if (!canOpen) return;
     let loaded;
     try {
-      await bridge({ action:'dgt_clear_plugin_cache', pluginId });
-      loaded = await bridge({ action:'dgt_load_plugin_ui', pluginId });
+      await bridge({ action:'slice_clear_plugin_cache', pluginId });
+      loaded = await bridge({ action:'slice_load_plugin_ui', pluginId });
     }
     catch (e) { return toast('err', e.message); }
     const plugin = loaded.plugin || { id:pluginId, name:pluginId };
@@ -2238,7 +2238,7 @@
 
   async function promptPluginUpdateIfNeeded(pluginId) {
     let status = null;
-    try { status = await bridge({ action:'dgt_plugin_update_status', pluginId }); }
+    try { status = await bridge({ action:'slice_plugin_update_status', pluginId }); }
     catch (_e) { return true; }
     if (!status || !status.updateAvailable) return true;
     const ok = await nativeConfirm({
@@ -2249,7 +2249,7 @@
     });
     if (!ok) return true;
     try {
-      const r = await bridge({ action:'dgt_update_plugin', pluginId });
+      const r = await bridge({ action:'slice_update_plugin', pluginId });
       toast('ok', `Updated “${r.name}” to v${r.version}.`);
       await refreshPinnedPlugins();
       return true;
@@ -2281,7 +2281,7 @@
   }
 
   function openPluginPopupFallback(plugin, html) {
-    const popup = window.open('', 'dgt_plugin_' + plugin.id, 'width=385,height=536,resizable=no,scrollbars=no');
+    const popup = window.open('', 'slice_plugin_' + plugin.id, 'width=385,height=536,resizable=no,scrollbars=no');
     if (!popup) {
       toast('err', 'Plugin window was blocked by the browser.');
       return;
@@ -2303,12 +2303,12 @@
           event.stopPropagation();
         }
       }, true);
-      window.DIGITEK_PLUGIN_ID = ${JSON.stringify(pluginId)};
+      window.SLICE_AMAS_PLUGIN_ID = ${JSON.stringify(pluginId)};
       window.pluginInvoke = function(payload) {
-        if (!window.opener || !window.opener.__dgtPluginBridge) {
-          return Promise.reject(new Error('DigiTek plugin bridge is unavailable.'));
+        if (!window.opener || !window.opener.__slicePluginBridge) {
+          return Promise.reject(new Error('Slice AMAS plugin bridge is unavailable.'));
         }
-        return window.opener.__dgtPluginBridge(${JSON.stringify(pluginId)}, payload || {});
+        return window.opener.__slicePluginBridge(${JSON.stringify(pluginId)}, payload || {});
       };
     <\/script>`;
     return /<head[^>]*>/i.test(html)
@@ -2316,8 +2316,8 @@
       : boot + html;
   }
 
-  window.__dgtPluginBridge = async function(pluginId, payload) {
-    const result = await bridge({ action:'dgt_plugin_call', pluginId, payload });
+  window.__slicePluginBridge = async function(pluginId, payload) {
+    const result = await bridge({ action:'slice_plugin_call', pluginId, payload });
     return unwrapPluginResult(result);
   };
 
@@ -2371,7 +2371,7 @@
     render();
     // appInfo may need a moment while the Python backend warms up.
     for (let i = 0; i < 25; i++) {
-      try { state.appInfo = await bridge({ action:'dgt_app_info' }); break; }
+      try { state.appInfo = await bridge({ action:'slice_app_info' }); break; }
       catch (e) { await new Promise(r => setTimeout(r, 200)); }
     }
     if (state.appInfo) {

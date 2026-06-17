@@ -24,9 +24,9 @@
             event.stopPropagation();
           }
         }, true);
-        window.DIGITEK_PLUGIN_ID = ${JSON.stringify(pluginId)};
+        window.SLICE_AMAS_PLUGIN_ID = ${JSON.stringify(pluginId)};
         window.pluginInvoke = function(payload) {
-          return window.parent.__dgtPluginBridge(${JSON.stringify(pluginId)}, payload || {});
+          return window.parent.__slicePluginBridge(${JSON.stringify(pluginId)}, payload || {});
         };
       <\/script>`;
       return /<head[^>]*>/i.test(html)
@@ -34,9 +34,9 @@
         : boot + html;
     }
 
-    window.__dgtPluginBridge = async function(pluginId, body) {
+    window.__slicePluginBridge = async function(pluginId, body) {
       if (!window.invokeBridge) throw new Error('Backend bridge not available.');
-      const res = await window.invokeBridge({ action:'dgt_plugin_call', pluginId, payload: body || {} });
+      const res = await window.invokeBridge({ action:'slice_plugin_call', pluginId, payload: body || {} });
       if (!res || res.status !== 'ok') throw new Error((res && res.reason) || 'Plugin backend error');
       if (typeof res.result === 'string') {
         try {

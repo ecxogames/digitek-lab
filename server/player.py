@@ -1,4 +1,4 @@
-# DigiTek Lab — Playback Engine (multi-track)
+# Slice AMAS — Playback Engine (multi-track)
 #
 # Plays an execution back as real keyboard + mouse input. An execution is a set of
 # CLIPS, each placed on a layer at a `start` time for a `duration` (with an optional

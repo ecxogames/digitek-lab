@@ -1,4 +1,4 @@
-# DigiTek Lab — Input Driver
+# Slice AMAS — Input Driver
 #
 # Thin wrapper around `pynput` that the recorder and player share. It is the ONLY
 # module that talks to the real keyboard/mouse, so the rest of the engine stays
@@ -200,7 +200,7 @@ def _support_job_log(line):
 
 def _looks_like_app_executable(path):
     name = os.path.basename(path or "").lower()
-    return name in {"esdengine.exe", "digitek lab.exe"}
+    return name in {"esdengine.exe", "slice amas.exe"}
 
 
 def _candidate_python_commands():
@@ -212,7 +212,7 @@ def _candidate_python_commands():
             seen.add(key)
             yield cmd
 
-    env_python = os.environ.get("DIGITEK_PYTHON_EXECUTABLE")
+    env_python = os.environ.get("SLICE_AMAS_PYTHON_EXECUTABLE")
     if env_python:
         yield from add([env_python])
 
@@ -291,7 +291,7 @@ def _computer_python():
     raise RuntimeError(
         "Could not find a real Python interpreter in the computer PATH. "
         "Install Python from python.org with 'Add python.exe to PATH' enabled, "
-        "or set DIGITEK_PYTHON_EXECUTABLE to python.exe. Tried: " + "; ".join(errors)
+        "or set SLICE_AMAS_PYTHON_EXECUTABLE to python.exe. Tried: " + "; ".join(errors)
     )
 
 

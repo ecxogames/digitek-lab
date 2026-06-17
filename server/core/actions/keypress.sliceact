@@ -1,5 +1,5 @@
 {
-  "format": "dgtact",
+  "format": "sliceact",
   "schema": 1,
   "type": "action",
   "actionType": "keypress",
